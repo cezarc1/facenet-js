@@ -41,4 +41,10 @@ Thumbs.db
 
 # Package manager files (keep package-lock.json for CI)
 yarn.lock
-pnpm-lock.yaml 
+pnpm-lock.yaml
+
+# Local env files
+.env*.local
+
+# Publishing guides
+publish-steps.md 
