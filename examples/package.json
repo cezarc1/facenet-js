@@ -14,7 +14,8 @@
     "react-dom": "19.1.0",
     "react-error-boundary": "^6.0.0",
     "react-router-dom": "^7.6.2",
-    "tailwindcss": "^4.1.8"
+    "tailwindcss": "^4.1.8",
+    "facenet-js": "file:.."
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.2.4",
