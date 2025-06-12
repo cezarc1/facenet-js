@@ -193,12 +193,12 @@ export class FaceDetector {
    * 
    * @example
    * ```ts
-   * const embedding = await faceDetector.embed({
+   * const embedding = await imageFaceDetector.embed({
    *   source: imageElement,
    *   detection: faceDetectedFromImageElement,
    * });
    * 
-   * const embedding2 = await faceDetector.embed({
+   * const embedding2 = await videoFaceDetector.embed({
    *   source: videoElement,
    *   detection: faceDetectedFromVideoElement,
    *   timestamp: performance.now()
