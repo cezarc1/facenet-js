@@ -1,0 +1,48 @@
+# Source files (only dist is needed)
+src/
+example/
+
+# Config files
+tsconfig.json
+vite.config.ts
+vite.config.cjs.ts
+.eslintrc*
+.prettierrc*
+
+# Development files
+*.test.ts
+*.spec.ts
+__tests__/
+test/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Documentation source
+docs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Build artifacts
+*.tsbuildinfo
+coverage/
+.nyc_output/
+
+# Package manager files
+yarn.lock
+pnpm-lock.yaml
+
+# Misc
+.DS_Store
+*.log
+.env* 

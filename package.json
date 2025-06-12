@@ -1,0 +1,79 @@
+{
+  "name": "facenet-js",
+  "version": "0.1.0",
+  "description": "Face detection and recognition library using TensorFlow.js and MediaPipe along with helpful React hooks and components",
+  "author": "Cezar Cocu <me@cezarcocu.com>",
+  "license": "MIT",
+  "keywords": [
+    "face-detection",
+    "face-recognition",
+    "mediapipe",
+    "tensorflow",
+    "computer-vision",
+    "facenet",
+    "face-embeddings"
+  ],
+  "homepage": "https://github.com/cezarc1/facenet-js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cezarc1/facenet-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cezarc1/facenet-js/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "npm run clean && npm run build:esm && npm run build:cjs && npm run build:types",
+    "build:esm": "vite build",
+    "build:cjs": "vite build --config vite.config.cjs.ts",
+    "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap",
+    "clean": "rm -rf dist",
+    "dev": "vite build --watch",
+    "test": "vitest",
+    "test:watch": "vitest watch",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": ">=0.10.0",
+    "@tensorflow/tfjs": ">=4.0.0",
+    "react": "19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.19",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@typescript-eslint/eslint-plugin": "^8.31.0",
+    "@typescript-eslint/parser": "^8.31.0",
+    "eslint": "^9.27.0",
+    "jsdom": "^25.0.1",
+    "prettier": "^3.3.3",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vite-plugin-dts": "^4.3.0",
+    "vitest": "^2.1.8"
+  },
+  "peerDependencies": {
+    "@mediapipe/tasks-vision": ">=0.10.0",
+    "@tensorflow/tfjs": ">=4.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
