@@ -45,6 +45,3 @@ pnpm-lock.yaml
 
 # Local env files
 .env*.local
-
-# Publishing guides
-publish-steps.md 
