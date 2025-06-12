@@ -1,5 +1,11 @@
 import { useMemo } from 'react';
-import { Embedding, ImageEmbedder } from '@mediapipe/tasks-vision';
+import { FaceDetector } from '../../FaceDetector';
+import { FaceSimilarityResult } from "../../types";
+
+export type FaceSimilarity = FaceSimilarityResult & {
+  isMatch: boolean;
+  message: string;
+};
 
 /**
  * Calculates the similarity between two face embeddings.
@@ -12,14 +18,14 @@ export const useFaceSimilarity = (
   a: Embedding | null,
   b: Embedding | null,
   threshold: number = 0.5
-) => {
+): FaceSimilarity | null => {
   const similarity = useMemo(() => {
     if (!a || !b) return null;
-    const score = ImageEmbedder.cosineSimilarity(a, b);
+    const similarity = FaceDetector.cosineSimilarity(a, b);
     return {
-      score,
-      message: `Face Similarity: ${score.toFixed(3)}`,
-      isMatch: score > threshold,
+      similarity,
+      message: `Face Similarity: ${similarity.toFixed(3)}`,
+      isMatch: similarity > threshold,
     };
   }, [a, b, threshold]);
 

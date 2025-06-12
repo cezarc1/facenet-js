@@ -24,16 +24,16 @@ export interface FaceDetectionOptions {
   minDetectionConfidence: number;
   /** Optional custom path to the face detection model. Defaults to MediaPipe's hosted model */
   detectionModelPath?: string;
-  /** Path to the FaceNet embedding model. Required for face recognition features */
+  /** Path to the FaceNet embedding model. Required for face embedding features */
   embeddingModelPath?: string;
   /** Optional custom WASM files path. Defaults to MediaPipe's CDN */
   wasmPath?: string;
 }
 
 export interface FaceSimilarityResult {
+  // The cosine similarity score between the two embeddings.
+  // They are between -1 and 1, where 1 means the embeddings are identical, and -1 means they are completely different.
   similarity: number;
-  isMatch: boolean;
-  message: string;
 }
 
 /**

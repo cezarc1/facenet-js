@@ -1,5 +1,5 @@
-import { useFaceDetector } from '@/react/hooks/useFaceDetection'
-import { FaceDetectionDevice, FaceDetectionMode } from '@/types'
+import { useFaceDetector } from 'facenet-js/react'
+import { FaceDetectionDevice, FaceDetectionMode } from 'facenet-js'
 import { Camera } from '@mediapipe/camera_utils'
 import { Detection, Embedding } from '@mediapipe/tasks-vision'
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react'

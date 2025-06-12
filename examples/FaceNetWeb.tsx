@@ -1,10 +1,10 @@
-import { FaceDetectionPanel } from './components/FaceDetectionPanel';
-import { useFaceSimilarity } from '@/react/hooks/useFaceSimilarity';
-import { ImageFaceDetectorProvider, VideoFaceDetectorProvider } from '@/react/providers/FaceDetectorProvider';
-import { FaceDetectionDevice } from '@/types';
 import { Embedding } from '@mediapipe/tasks-vision';
+import { FaceDetectionDevice } from 'facenet-js';
+import { useFaceSimilarity } from 'facenet-js/react';
+import { ImageFaceDetectorProvider, VideoFaceDetectorProvider } from 'facenet-js/react/FaceDetectorProvider';
 import { Suspense, useCallback, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
+import { FaceDetectionPanel } from './components/FaceDetectionPanel';
 
 function MediaPipeErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
   return (

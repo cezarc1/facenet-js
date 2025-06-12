@@ -10,5 +10,5 @@ export type {
   FaceDetectionOptions,
   FaceDetectorState,
   FaceSimilarityResult,
-  WasmFileset,
+  WasmFileset
 } from './types';
