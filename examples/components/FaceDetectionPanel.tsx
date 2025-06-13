@@ -1,7 +1,6 @@
-import { useFaceDetector } from 'facenet-js/react'
-import { FaceDetectionDevice, FaceDetectionMode } from 'facenet-js'
 import { Camera } from '@mediapipe/camera_utils'
-import { Detection, Embedding } from '@mediapipe/tasks-vision'
+import { Detection, EmbeddingResult, FaceDetectionDevice, FaceDetectionMode } from 'facenet-js'
+import { useFaceDetector } from 'facenet-js/react'
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { FaceHighlight } from './FaceHighlight'
 
@@ -9,7 +8,7 @@ interface FaceDetectionPanelProps {
   mode: FaceDetectionMode
   device?: FaceDetectionDevice
   minDetectionConfidence?: number
-  onEmbeddingChange?: (embedding: Embedding | null, detection?: Detection) => void
+  onEmbeddingChange?: (embedding: EmbeddingResult | null, detection?: Detection) => void
   onError?: (error: Error) => void
   disabled?: boolean
   title: string
@@ -27,7 +26,7 @@ export const FaceDetectionPanel = ({
 }: FaceDetectionPanelProps) => {
   const { faceDetector, isLoading, error: detectorError } = useFaceDetector();
   const [detection, setDetection] = useState<Detection | null>(null);
-  const [embedding, setEmbedding] = useState<Embedding | null>(null);
+  const [embedding, setEmbedding] = useState<EmbeddingResult | null>(null);
   const [processingError, setProcessingError] = useState<Error | null>(null);
   const [isWebcamActive, setIsWebcamActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -71,8 +70,8 @@ export const FaceDetectionPanel = ({
         detection: firstDetection
       });
 
-      if (embeddingResult?.embeddings[0]) {
-        setEmbedding(embeddingResult.embeddings[0]);
+      if (embeddingResult) {
+        setEmbedding(embeddingResult);
       }
     } catch (error) {
       console.error('Face detection error:', error);
@@ -102,8 +101,8 @@ export const FaceDetectionPanel = ({
         timestamp
       });
 
-      if (embeddingResult?.embeddings[0]) {
-        setEmbedding(embeddingResult.embeddings[0]);
+      if (embeddingResult) {
+        setEmbedding(embeddingResult);
       }
     } catch (error) {
       console.error('Video face detection error:', error);

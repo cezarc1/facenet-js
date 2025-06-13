@@ -1,7 +1,5 @@
-import { Embedding } from '@mediapipe/tasks-vision';
-import { FaceDetectionDevice } from 'facenet-js';
-import { useFaceSimilarity } from 'facenet-js/react';
-import { ImageFaceDetectorProvider, VideoFaceDetectorProvider } from 'facenet-js/react/FaceDetectorProvider';
+import { EmbeddingResult, FaceDetectionDevice } from 'facenet-js';
+import { ImageFaceDetectorProvider, useFaceSimilarity, VideoFaceDetectorProvider } from 'facenet-js/react';
 import { Suspense, useCallback, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { FaceDetectionPanel } from './components/FaceDetectionPanel';
@@ -47,8 +45,8 @@ function MediaPipeLoadingFallback() {
 
 const FaceNetWebInner = () => {
   const [device, setDevice] = useState<FaceDetectionDevice>('GPU');
-  const [imageEmbedding, setImageEmbedding] = useState<Embedding | null>(null);
-  const [videoEmbedding, setVideoEmbedding] = useState<Embedding | null>(null);
+  const [imageEmbedding, setImageEmbedding] = useState<EmbeddingResult | null>(null);
+  const [videoEmbedding, setVideoEmbedding] = useState<EmbeddingResult | null>(null);
   const [errors, setErrors] = useState<Error[]>([]);
   const similarity = useFaceSimilarity(imageEmbedding, videoEmbedding);
   const handleError = useCallback((error: Error) => {
