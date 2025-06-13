@@ -1,4 +1,4 @@
-import { Detection, FilesetResolver, ImageEmbedderResult } from '@mediapipe/tasks-vision';
+import { Detection, Embedding as EmbeddingMediaPipe, FilesetResolver, ImageEmbedderResult } from '@mediapipe/tasks-vision';
 export type { Detection, ImageEmbedderResult } from '@mediapipe/tasks-vision';
 
 export type FaceDetectionDevice = 'CPU' | 'GPU';
@@ -44,3 +44,5 @@ export type WasmFileset = Awaited<ReturnType<typeof FilesetResolver.forVisionTas
 export type FaceDetection = Detection;
 
 export type EmbeddingResult = ImageEmbedderResult;
+
+export type Embedding = EmbeddingMediaPipe;

@@ -1,16 +1,16 @@
 import {
   Detection,
-  Embedding,
   FaceDetector as FaceDetectorMediaPipe,
   FilesetResolver,
   ImageEmbedder,
 } from '@mediapipe/tasks-vision';
 import {
+  Embedding,
   EmbeddingRequest,
   EmbeddingResult,
   FaceDetection,
   FaceDetectionOptions,
-  FaceDetectorState,
+  FaceDetectorState
 } from './types';
 
 const DEFAULT_DETECTION_MODEL =
@@ -28,8 +28,8 @@ const DEFAULT_WASM_PATH = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/
  *   minDetectionConfidence: 0.5,
  * });
  * await faceDetector.initialize();
- * const detections = await faceDetector.detectFromImage(imageElement);
- * const embeddings = await faceDetector.embed({
+ * const detections = faceDetector.detectFromImage(imageElement);
+ * const embeddings = faceDetector.embed({
  *   source: imageElement,
  *   detection: detections[0],
  * });
@@ -74,23 +74,38 @@ export class FaceDetector {
       const vision = await FilesetResolver.forVisionTasks(
         this.options.wasmPath || DEFAULT_WASM_PATH
       );
-      this.faceDetector = await FaceDetectorMediaPipe.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: this.options.detectionModelPath || DEFAULT_DETECTION_MODEL,
-          delegate: this.options.device,
-        },
-        runningMode: this.options.mode,
-        minDetectionConfidence: this.options.minDetectionConfidence,
-      });
 
-      // Create face embedder only if embedding model path is provided
       if (this.options.embeddingModelPath) {
-        this.faceEmbedder = await ImageEmbedder.createFromOptions(vision, {
+        // create face detector and face embedder in parallel
+        const [faceDetector, faceEmbedder] = await Promise.all([
+          FaceDetectorMediaPipe.createFromOptions(vision, {
+            baseOptions: {
+              modelAssetPath: this.options.detectionModelPath || DEFAULT_DETECTION_MODEL,
+              delegate: this.options.device,
+            },
+            runningMode: this.options.mode,
+            minDetectionConfidence: this.options.minDetectionConfidence,
+          }),
+          ImageEmbedder.createFromOptions(vision, {
+            baseOptions: {
+              modelAssetPath: this.options.embeddingModelPath,
+              delegate: this.options.device,
+            },
+            runningMode: this.options.mode,
+          })
+        ]);
+
+        this.faceDetector = faceDetector;
+        this.faceEmbedder = faceEmbedder;
+      } else {
+        // Create face detector but not face embedder if no embedding model path
+        this.faceDetector = await FaceDetectorMediaPipe.createFromOptions(vision, {
           baseOptions: {
-            modelAssetPath: this.options.embeddingModelPath,
+            modelAssetPath: this.options.detectionModelPath || DEFAULT_DETECTION_MODEL,
             delegate: this.options.device,
           },
           runningMode: this.options.mode,
+          minDetectionConfidence: this.options.minDetectionConfidence,
         });
       }
 
@@ -107,7 +122,7 @@ export class FaceDetector {
    * 
    * @example
    * ```ts
-   * const detections = await faceDetector.detectFromImage(imageElement);
+   * const detections = faceDetector.detectFromImage(imageElement);
    * if (detections.length > 0) {
    *   console.log('The image contains ' + detections.length + ' faces');
    * } else {
@@ -117,7 +132,7 @@ export class FaceDetector {
    * @param imageElement - The image element to detect faces from.
    * @returns The detections. If no faces are detected, returns an empty array.
    */
-  async detectFromImage(imageElement: HTMLImageElement): Promise<FaceDetection[]> {
+  detectFromImage(imageElement: HTMLImageElement): FaceDetection[] {
     if (this.state !== 'initialized') {
       throw new Error('Face detector not initialized');
     }
@@ -129,9 +144,9 @@ export class FaceDetector {
    * 
    * @example
    * ```ts
-   * const detections = await faceDetector.detectFromVideo(videoElement, timestamp);
+   * const detections = faceDetector.detectFromVideo(videoElement, timestamp);
    * if (detections.length > 0) {
-   *   console.log('The video contains ' + detections.length + ' faces');
+   *   console.log('The video contains ' + detections.length + ' faces at timestamp ' + timestamp);
    * } else {
    *   console.log('The video does not contain any faces');
    * }
@@ -140,10 +155,10 @@ export class FaceDetector {
    * @param timestamp - The timestamp of the video element.
    * @returns The detections.
    */
-  async detectFromVideo(
+  detectFromVideo(
     videoElement: HTMLVideoElement,
     timestamp: number
-  ): Promise<FaceDetection[]> {
+  ): FaceDetection[] {
     if (this.state !== 'initialized') {
       throw new Error('Face detector not initialized');
     }
@@ -193,18 +208,18 @@ export class FaceDetector {
    * 
    * @example
    * ```ts
-   * const embedding = await imageFaceDetector.embed({
+   * const result = imageFaceDetector.embed({
    *   source: imageElement,
    *   detection: faceDetectedFromImageElement,
    * });
    * 
-   * const embedding2 = await videoFaceDetector.embed({
+   * const result2 = videoFaceDetector.embed({
    *   source: videoElement,
    *   detection: faceDetectedFromVideoElement,
    *   timestamp: performance.now()
    * });
    *
-   * const similarity = FaceDetector.cosineSimilarity(embedding, embedding2);
+   * const similarity = FaceDetector.cosineSimilarity(result.embeddings[0], result2.embeddings[0]);
    * if (similarity > 0.5) {
    *   console.log('The faces are similar');
    * } else {
@@ -213,10 +228,9 @@ export class FaceDetector {
    * ```
    * @param request - The request for embedding a face.
    * @returns The embedded face tensor or null if no bounding box is found.
-   * 
    * @throws Error if face embedder is not initialized (embeddingModelPath not provided)
    */
-  async embed(request: EmbeddingRequest): Promise<EmbeddingResult | null> {
+  embed(request: EmbeddingRequest): EmbeddingResult | null {
     if (this.state !== 'initialized') {
       throw new Error('Face detector not initialized');
     }
