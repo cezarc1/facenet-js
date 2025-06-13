@@ -1,6 +1,6 @@
 {
   "name": "facenet-js",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Face detection and recognition library using TensorFlow.js and MediaPipe along with helpful React hooks and components",
   "author": "Cezar Cocu <me@cezarcocu.com>",
   "license": "MIT",
