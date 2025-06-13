@@ -8,8 +8,7 @@ Also has helpful React hooks and components.
 
 [FaceNet.js Demo](https://cezarcocu.com/facenet-js-demo/)
 
-[![npm version](https://img.shields.io/npm/v/facenet-js.svg)](https://www.npmjs.com/package/facenet-js)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+Code for the demo is in the example folder [here](https://github.com/cezarc1/facenet-js/tree/main/examples).
 
 ## Features
 
@@ -21,6 +20,9 @@ Also has helpful React hooks and components.
 - Privacy-first: All processing happens locally in the browser
 
 ## Installation
+
+[![npm version](https://img.shields.io/npm/v/facenet-js.svg)](https://www.npmjs.com/package/facenet-js)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ```bash
 npm install facenet-js
