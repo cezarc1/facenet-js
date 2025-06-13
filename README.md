@@ -44,19 +44,18 @@ const detector = new FaceDetector({
   device: 'GPU', // 'GPU' for WebGL/WebGPU acceleration, 'CPU' for compatibility
   mode: 'IMAGE', // 'IMAGE' for photos, 'VIDEO' for real-time streams
   minDetectionConfidence: 0.5,
-  embeddingModelPath: '/models/facenet.tflite' // Path to FaceNet model
+  embeddingModelPath: '/models/facenet.tflite' // Optional: Path to FaceNet model for creating face embeddings
 });
 
-// Initialize the detector (loads models into browser memory)
 await detector.initialize();
 
 // Detect faces in an image
 const imageElement = document.getElementById('myImage') as HTMLImageElement;
-const detections = await detector.detectFromImage(imageElement);
+const detections = detector.detectFromImage(imageElement);
 
 // Get face embeddings for recognition
 if (detections.length > 0) {
-  const embedding = await detector.embed({
+  const embedding = detector.embed({
     source: imageElement,
     detection: detections[0]
   });
@@ -415,6 +414,13 @@ npm test
 # Lint code
 npm run lint
 ```
+
+## TODO / Roadmap
+
+- [ ] **Face Clustering**: Add support for clustering similar faces together
+  - DBSCAN or hierarchical clustering algorithms
+  - Automatic grouping of face embeddings
+  - Configurable similarity thresholds
 
 ## License
 
