@@ -1,8 +1,8 @@
 # FaceNet.js
 
-A high-performance TypeScript library for face detection and recognition, optimized for in-browser execution with native GPU and CPU support.
+A TypeScript library for face detection and identification, optimized for in-browser execution with native GPU and CPU support.
 
-Also has helpful React hooks and components for face detection and recognition.
+Also has helpful React hooks and components.
 
 ## Demo
 
