@@ -1,18 +1,24 @@
 # FaceNet.js
 
-A TypeScript library for face detection and recognition using TensorFlow.js and MediaPipe.
+A high-performance TypeScript library for face detection and recognition, optimized for in-browser execution with native GPU and CPU support.
+
+Also has helpful React hooks and components for face detection and recognition.
+
+## Demo
+
+[FaceNet.js Demo](https://cezarcocu.com/facenet-js-demo/)
 
 [![npm version](https://img.shields.io/npm/v/facenet-js.svg)](https://www.npmjs.com/package/facenet-js)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
 
-- 🎯 Real-time face detection using MediaPipe's BlazeFace model
-- 🧠 Face recognition using FaceNet embeddings
-- 📸 Support for both images and video streams
-- 🚀 Hardware acceleration with WebGL/WebGPU
-- 📦 TypeScript support with full type definitions
-- ⚡ Optimized for web browsers
+- **Browser-Optimized**: Built specifically for high-performance in-browser execution
+- Real-time face detection with BlazeFace model
+- Face recognition using FaceNet embeddings
+- Support for both images and video streams
+- Hardware acceleration with WebGL/WebGPU for blazing-fast performance
+- Privacy-first: All processing happens locally in the browser
 
 ## Installation
 
@@ -28,17 +34,20 @@ yarn add facenet-js
 
 ## Quick Start
 
+### Vanilla JavaScript/TypeScript
+
 ```typescript
 import { FaceDetector } from 'facenet-js';
 
-// Create a face detector instance
+// Create a face detector instance with GPU acceleration (or CPU fallback)
 const detector = new FaceDetector({
-  device: 'GPU', // or 'CPU'
-  mode: 'IMAGE', // or 'VIDEO'
-  minDetectionConfidence: 0.5
+  device: 'GPU', // 'GPU' for WebGL/WebGPU acceleration, 'CPU' for compatibility
+  mode: 'IMAGE', // 'IMAGE' for photos, 'VIDEO' for real-time streams
+  minDetectionConfidence: 0.5,
+  embeddingModelPath: '/models/facenet.tflite' // Path to FaceNet model
 });
 
-// Initialize the detector
+// Initialize the detector (loads models into browser memory)
 await detector.initialize();
 
 // Detect faces in an image
@@ -51,6 +60,33 @@ if (detections.length > 0) {
     source: imageElement,
     detection: detections[0]
   });
+}
+```
+
+### React
+
+```tsx
+import { ImageFaceDetectorProvider, useFaceDetector, useFaceSimilarity } from 'facenet-js/react';
+
+function App() {
+  return (
+    <ImageFaceDetectorProvider
+      options={{
+        device: 'GPU',
+        minDetectionConfidence: 0.5,
+        embeddingModelPath: '/models/facenet.tflite'
+      }}
+    >
+      <FaceDetectionComponent />
+    </ImageFaceDetectorProvider>
+  );
+}
+
+function FaceDetectionComponent() {
+  const { faceDetector, isLoading, error } = useFaceDetector();
+  
+  // The face detector is automatically initialized by the provider
+  // Use faceDetector.detectFromImage() or faceDetector.detectFromVideo()
 }
 ```
 
@@ -68,15 +104,22 @@ new FaceDetector(options: FaceDetectionOptions)
 
 **Options:**
 
-- `device`: `'CPU'` | `'GPU'` - Choose computation device
+- `device`: `'CPU'` | `'GPU'` - Select computation device
+  - `'GPU'`: Leverages WebGL/WebGPU for maximum performance
+  - `'CPU'`: Fallback option for broader compatibility
 - `mode`: `'IMAGE'` | `'VIDEO'` - Detection mode
+  - `'IMAGE'`: Optimized for static images
+  - `'VIDEO'`: Optimized for real-time video streams
 - `minDetectionConfidence`: `number` - Minimum confidence threshold (0-1)
+- `embeddingModelPath`: `string` - Path to the FaceNet embedding model (required for face recognition)
+- `detectionModelPath?`: `string` - Optional custom path to face detection model
+- `wasmPath?`: `string` - Optional custom path to WASM files
 
 #### Methods
 
 ##### `initialize(): Promise<void>`
 
-Initializes the MediaPipe models. Must be called before detection.
+Initializes and loads the face detection models into browser memory. Must be called before detection.
 
 ##### `detectFromImage(imageElement: HTMLImageElement): Promise<Detection[]>`
 
@@ -100,6 +143,68 @@ Generates face embeddings for recognition.
 }
 ```
 
+### React API
+
+#### Providers
+
+##### `ImageFaceDetectorProvider`
+
+A React context provider for image-based face detection.
+
+```tsx
+<ImageFaceDetectorProvider options={options}>
+  {children}
+</ImageFaceDetectorProvider>
+```
+
+##### `VideoFaceDetectorProvider`
+
+A React context provider for video-based face detection.
+
+```tsx
+<VideoFaceDetectorProvider options={options}>
+  {children}
+</VideoFaceDetectorProvider>
+```
+
+#### Hooks
+
+##### `useFaceDetector()`
+
+Access the face detector instance and its state.
+
+```tsx
+const { faceDetector, isLoading, error } = useFaceDetector();
+```
+
+Returns:
+
+- `faceDetector`: The FaceDetector instance
+- `isLoading`: Boolean indicating if models are loading
+- `error`: Error object if initialization failed
+
+##### `useFaceSimilarity(a, b, threshold?)`
+
+Calculate similarity between two face embeddings.
+
+```tsx
+const similarity = useFaceSimilarity(embedding1, embedding2, 0.5);
+```
+
+Returns:
+
+- `similarity`: Cosine similarity score (-1 to 1)
+- `isMatch`: Boolean indicating if faces match (similarity > threshold)
+- `message`: Human-readable similarity message
+
+##### `useWebcam()`
+
+Manage webcam access for face detection.
+
+```tsx
+const { videoRef, isActive, error, startWebcam, stopWebcam } = useWebcam();
+```
+
 ## Usage Examples
 
 ### Face Detection in Images
@@ -111,7 +216,8 @@ async function detectFaces() {
   const detector = new FaceDetector({
     device: 'GPU',
     mode: 'IMAGE',
-    minDetectionConfidence: 0.7
+    minDetectionConfidence: 0.7,
+    embeddingModelPath: '/models/facenet.tflite'
   });
 
   await detector.initialize();
@@ -139,7 +245,8 @@ async function startVideoDetection() {
   const detector = new FaceDetector({
     device: 'GPU',
     mode: 'VIDEO',
-    minDetectionConfidence: 0.5
+    minDetectionConfidence: 0.5,
+    embeddingModelPath: '/models/facenet.tflite'
   });
 
   await detector.initialize();
@@ -171,7 +278,8 @@ async function compareFaces(img1: HTMLImageElement, img2: HTMLImageElement) {
   const detector = new FaceDetector({
     device: 'GPU',
     mode: 'IMAGE',
-    minDetectionConfidence: 0.5
+    minDetectionConfidence: 0.5,
+    embeddingModelPath: '/models/facenet.tflite'
   });
 
   await detector.initialize();
@@ -222,6 +330,50 @@ function cosineSimilarity(a: Float32Array, b: Float32Array): number {
 }
 ```
 
+### React Face Comparison Example
+
+```tsx
+import { ImageFaceDetectorProvider, VideoFaceDetectorProvider, useFaceDetector, useFaceSimilarity } from 'facenet-js/react';
+import { useState } from 'react';
+
+function FaceComparisonApp() {
+  const [imageEmbedding, setImageEmbedding] = useState(null);
+  const [videoEmbedding, setVideoEmbedding] = useState(null);
+  const similarity = useFaceSimilarity(imageEmbedding, videoEmbedding, 0.5);
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+      <ImageFaceDetectorProvider
+        options={{
+          device: 'GPU',
+          minDetectionConfidence: 0.5,
+          embeddingModelPath: '/models/facenet.tflite'
+        }}
+      >
+        <ImageUploader onEmbedding={setImageEmbedding} />
+      </ImageFaceDetectorProvider>
+
+      <VideoFaceDetectorProvider
+        options={{
+          device: 'GPU',
+          minDetectionConfidence: 0.5,
+          embeddingModelPath: '/models/facenet.tflite'
+        }}
+      >
+        <WebcamDetector onEmbedding={setVideoEmbedding} />
+      </VideoFaceDetectorProvider>
+
+      {similarity && (
+        <div style={{ gridColumn: 'span 2', textAlign: 'center' }}>
+          <h3>{similarity.isMatch ? '✅ Match!' : '❌ No Match'}</h3>
+          <p>{similarity.message}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
 ## Model Information
 
 This library uses:
@@ -233,11 +385,17 @@ Note: The FaceNet model file needs to be hosted and accessible. Place it in your
 
 ## Browser Support
 
+FaceNet.js is designed as a browser-first library with excellent cross-browser compatibility:
+
 - Chrome/Edge 90+
 - Firefox 89+
 - Safari 15.4+
 
-WebGL or WebGPU support is required for GPU acceleration.
+**Performance Notes:**
+
+- **GPU Mode**: Requires WebGL or WebGPU support for hardware acceleration
+- **CPU Mode**: Works on all modern browsers, even without GPU support
+- All processing happens locally in the browser - no server calls required
 
 ## Development
 
@@ -258,22 +416,12 @@ npm test
 npm run lint
 ```
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
-- [MediaPipe](https://mediapipe.dev/) for providing the face detection models
-- [TensorFlow.js](https://www.tensorflow.org/js) for the machine learning framework
-- [FaceNet](https://arxiv.org/abs/1503.03832) paper by Schroff et al.
+- [MediaPipe](https://mediapipe.dev/)
+- [TensorFlow.js](https://www.tensorflow.org/js)
+- [FaceNet](https://arxiv.org/abs/1503.03832) (Schroff et al.)
