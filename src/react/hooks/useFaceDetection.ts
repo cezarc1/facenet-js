@@ -1,5 +1,5 @@
-import { FaceDetectorContext } from '@/react/providers/FaceDetectorContext';
 import { useContext } from 'react';
+import { FaceDetectorContext } from '../providers/FaceDetectorContext';
 
 export const useFaceDetector = () => {
   const context = useContext(FaceDetectorContext);

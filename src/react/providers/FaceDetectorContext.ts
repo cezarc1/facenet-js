@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import { FaceDetector } from '@/FaceDetector';
+import { FaceDetector } from '../../FaceDetector';
 
 export interface FaceDetectorContextType {
   faceDetector: FaceDetector | null;

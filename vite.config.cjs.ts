@@ -4,17 +4,20 @@ import { resolve } from 'path';
 export default defineConfig({
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        'react/index': resolve(__dirname, 'src/react/index.ts')
+      },
       name: 'FaceNetJS',
       formats: ['cjs'],
-      fileName: 'index'
     },
     rollupOptions: {
-      external: ['@mediapipe/tasks-vision', '@tensorflow/tfjs'],
+      external: ['@mediapipe/tasks-vision', '@tensorflow/tfjs', 'react'],
       output: {
         globals: {
           '@mediapipe/tasks-vision': 'MediaPipeTasksVision',
-          '@tensorflow/tfjs': 'tf'
+          '@tensorflow/tfjs': 'tf',
+          'react': 'React'
         }
       }
     },

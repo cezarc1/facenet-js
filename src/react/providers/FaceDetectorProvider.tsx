@@ -1,6 +1,6 @@
-import { FaceDetector } from '@/FaceDetector';
-import { FaceDetectionOptions } from '@/types';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { FaceDetector } from '../../FaceDetector';
+import { FaceDetectionOptions } from '../../types';
 import { FaceDetectorContext, FaceDetectorContextType } from './FaceDetectorContext';
 
 export interface FaceDetectorProviderProps {
