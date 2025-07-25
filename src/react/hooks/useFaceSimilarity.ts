@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { FaceDetector } from '../../FaceDetector';
-import { FaceSimilarityResult, EmbeddingResult } from "../../types";
+import { FaceSimilarityResult, EmbeddingResult } from '../../types';
 
 export type FaceSimilarity = FaceSimilarityResult & {
   isMatch: boolean;
@@ -19,10 +19,10 @@ export const useFaceSimilarity = (
   b: EmbeddingResult | null,
   threshold: number = 0.5
 ): FaceSimilarity | null => {
-  const similarity = useMemo(() => {
+  return useMemo(() => {
     const embeddingA = a?.embeddings?.[0];
     const embeddingB = b?.embeddings?.[0];
-    if (!embeddingA || !embeddingB) return null;
+    if (!embeddingA || !embeddingB) { return null; }
     const similarity = FaceDetector.cosineSimilarity(embeddingA, embeddingB);
     return {
       similarity,
@@ -30,6 +30,4 @@ export const useFaceSimilarity = (
       isMatch: similarity > threshold,
     };
   }, [a, b, threshold]);
-
-  return similarity;
 };

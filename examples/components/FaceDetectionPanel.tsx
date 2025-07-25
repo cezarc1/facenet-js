@@ -1,8 +1,10 @@
 import { Camera } from '@mediapipe/camera_utils'
 import { Detection, EmbeddingResult, FaceDetectionDevice, FaceDetectionMode } from 'facenet-js'
 import { useFaceDetector } from 'facenet-js/react'
-import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { FaceHighlight } from './FaceHighlight'
+import { useImageCapture } from '../hooks/useImageCapture'
+import { ImageCaptureControls } from './ImageCaptureControls'
 
 interface FaceDetectionPanelProps {
   mode: FaceDetectionMode
@@ -31,7 +33,6 @@ export const FaceDetectionPanel = ({
   const [isWebcamActive, setIsWebcamActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraRef = useRef<Camera | null>(null);
   const isProcessingRef = useRef(false);
 
@@ -81,6 +82,44 @@ export const FaceDetectionPanel = ({
     }
   }, [faceDetector]);
 
+  const imageCapture = useImageCapture({
+    onError: (error) => setProcessingError(error)
+  });
+  
+  // Trigger face detection when image source changes
+  useEffect(() => {
+    if (imageCapture.imageSource && imageRef.current && mode === 'IMAGE') {
+      // Ensure image is loaded before detecting
+      const img = imageRef.current;
+      
+      const handleLoad = () => {
+        // Double-check dimensions are valid
+        if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+          detectFromImage(img);
+        } else {
+          setProcessingError(new Error('Invalid image dimensions'));
+        }
+      };
+      
+      if (img.complete && img.naturalWidth > 0) {
+        // Image already loaded
+        handleLoad();
+      } else {
+        // Wait for image to load
+        img.addEventListener('load', handleLoad);
+        img.addEventListener('error', () => {
+          setProcessingError(new Error('Failed to load image'));
+        });
+        
+        // Cleanup
+        return () => {
+          img.removeEventListener('load', handleLoad);
+          img.removeEventListener('error', () => {});
+        };
+      }
+    }
+  }, [imageCapture.imageSource, mode, detectFromImage]);
+
   const detectFromVideo = useCallback(async (videoElement: HTMLVideoElement, timestamp: number) => {
     if (!faceDetector || isProcessingRef.current) {
       return;
@@ -113,31 +152,6 @@ export const FaceDetectionPanel = ({
       isProcessingRef.current = false;
     }
   }, [faceDetector]);
-
-  const handleImageUpload = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files?.[0]) {
-      console.error('No file selected')
-      return
-    }
-    const reader = new FileReader()
-    reader.onload = () => {
-      if (imageRef.current) {
-        imageRef.current.src = reader.result as string
-        imageRef.current.onload = async () => {
-          try {
-            await detectFromImage(imageRef.current!)
-          } catch (error) {
-            console.error('Face detection error:', error);
-          }
-        }
-      }
-    }
-    reader.onerror = () => {
-      console.error('FileReader error')
-    }
-
-    reader.readAsDataURL(event.target.files[0])
-  }, [detectFromImage])
 
   const handleWebcamEnable = useCallback(async () => {
     if (!videoRef.current) {
@@ -222,36 +236,39 @@ export const FaceDetectionPanel = ({
 
       {mode === 'IMAGE' ? (
         <>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isDisabled}
-            className={`w-full py-3 px-4 rounded-lg font-medium transition-colors mb-4 ${isDisabled
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-teal-600 text-white hover:bg-teal-700 shadow-sm'
-              }`}
-          >
-            {buttonText}
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="hidden"
-            disabled={isDisabled}
-          />
-          <div className="relative bg-gray-50 rounded-lg overflow-hidden h-60">
-            <img
-              ref={imageRef}
-              alt="Uploaded"
-              className="w-full h-full object-contain"
-              style={{ display: imageRef.current?.src ? 'block' : 'none' }}
+          {!imageCapture.imageSource && (
+            <ImageCaptureControls 
+              imageCapture={imageCapture}
+              className="mb-4"
             />
-            {detection && <FaceHighlight
-              detection={detection}
-              containerRef={imageRef}
-            />}
-          </div>
+          )}
+          
+          {imageCapture.imageSource && (
+            <>
+              <div className="relative bg-gray-50 rounded-lg overflow-hidden h-60 mb-3">
+                <img
+                  ref={imageRef}
+                  src={imageCapture.imageSource}
+                  alt="Reference"
+                  className="w-full h-full object-contain"
+                />
+                {detection && <FaceHighlight
+                  detection={detection}
+                  containerRef={imageRef}
+                />}
+              </div>
+              <button
+                onClick={() => {
+                  imageCapture.actions.clearImage();
+                  setDetection(null);
+                  setEmbedding(null);
+                }}
+                className="w-full py-2 px-4 rounded-lg font-medium transition-colors bg-gray-600 text-white hover:bg-gray-700 shadow-sm text-sm"
+              >
+                Change Photo
+              </button>
+            </>
+          )}
         </>
       ) : (
         <>

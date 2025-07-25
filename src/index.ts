@@ -1,4 +1,5 @@
 export { FaceDetector } from './FaceDetector';
+export { FaceClusterer } from './FaceClusterer';
 
 export type {
   Detection,
@@ -10,5 +11,9 @@ export type {
   FaceDetectionOptions,
   FaceDetectorState,
   FaceSimilarityResult,
-  WasmFileset
+  WasmFileset,
+  ClusteringAlgorithm,
+  ClusteringOptions,
+  FaceCluster,
+  ClusterResult,
 } from './types';

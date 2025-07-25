@@ -10,7 +10,7 @@ import {
   EmbeddingResult,
   FaceDetection,
   FaceDetectionOptions,
-  FaceDetectorState
+  FaceDetectorState,
 } from './types';
 
 const DEFAULT_DETECTION_MODEL =
@@ -19,7 +19,7 @@ const DEFAULT_WASM_PATH = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/
 
 /**
  * A class for detecting and embedding faces.
- * 
+ *
  * @example
  * ```ts
  * const faceDetector = new FaceDetector({
@@ -92,7 +92,7 @@ export class FaceDetector {
               delegate: this.options.device,
             },
             runningMode: this.options.mode,
-          })
+          }),
         ]);
 
         this.faceDetector = faceDetector;
@@ -119,7 +119,7 @@ export class FaceDetector {
 
   /**
    * Detects faces from an image element.
-   * 
+   *
    * @example
    * ```ts
    * const detections = faceDetector.detectFromImage(imageElement);
@@ -141,7 +141,7 @@ export class FaceDetector {
 
   /**
    * Detects faces from a video element.
-   * 
+   *
    * @example
    * ```ts
    * const detections = faceDetector.detectFromVideo(videoElement, timestamp);
@@ -155,10 +155,7 @@ export class FaceDetector {
    * @param timestamp - The timestamp of the video element.
    * @returns The detections.
    */
-  detectFromVideo(
-    videoElement: HTMLVideoElement,
-    timestamp: number
-  ): FaceDetection[] {
+  detectFromVideo(videoElement: HTMLVideoElement, timestamp: number): FaceDetection[] {
     if (this.state !== 'initialized') {
       throw new Error('Face detector not initialized');
     }
@@ -205,14 +202,14 @@ export class FaceDetector {
   /**
    * Embeds a detected face into a tensor.
    * The resulting tensor can be then compared to other embeddings using cosine similarity or other distance metrics.
-   * 
+   *
    * @example
    * ```ts
    * const result = imageFaceDetector.embed({
    *   source: imageElement,
    *   detection: faceDetectedFromImageElement,
    * });
-   * 
+   *
    * const result2 = videoFaceDetector.embed({
    *   source: videoElement,
    *   detection: faceDetectedFromVideoElement,
@@ -278,7 +275,7 @@ export class FaceDetector {
   /**
    * Computes the cosine similarity between two embeddings.
    * The cosine similarity score is between -1 and 1, where 1 means the embeddings are identical, and -1 means they are completely different.
-   * 
+   *
    * @example
    * ```ts
    * const similarity = FaceDetector.cosineSimilarity(faceEmbedding1, faceEmbedding2);

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:arxiv.org)",
+      "Bash(npm run lint)",
+      "Bash(npm run build:types:*)",
+      "Bash(node:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run dev:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)"
+    ],
+    "deny": []
+  }
+}
