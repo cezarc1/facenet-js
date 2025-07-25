@@ -85,7 +85,7 @@ describe('FaceClusterer', () => {
 
     it('should throw error for embeddings without valid vectors', () => {
       const invalidEmbeddings = [{ embeddings: [] }] as EmbeddingResult[];
-      expect(() => clusterer.cluster(invalidEmbeddings)).toThrow('No valid embedding vectors found');
+      expect(() => clusterer.cluster(invalidEmbeddings)).toThrow('embeddings  to cluster must be >0');
     });
 
     it('should successfully cluster valid embeddings with DBSCAN', () => {

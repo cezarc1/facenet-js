@@ -461,4 +461,15 @@ export class FaceClusterer {
     const validCount = memberIndices.filter(idx => idx !== undefined).length;
     return validCount > 0 ? totalSimilarity / validCount : 0;
   }
+
+  /**
+   * Convenience method for clustering
+   * @param embeddings - Array of embedding results to cluster
+   * @param options - Clustering options
+   * @returns Cluster result
+   */
+  static cluster(embeddings: EmbeddingResult[], options?: ClusteringOptions): ClusterResult {
+    const clusterer = new FaceClusterer(options);
+    return clusterer.cluster(embeddings);
+  }
 }

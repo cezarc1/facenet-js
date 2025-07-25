@@ -2,6 +2,30 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { FaceDetector } from '../src/FaceDetector';
 import type { FaceDetectionOptions } from '../src/types';
 
+// Mock HTML elements for testing
+function createMockHTMLImageElement() {
+  const img = Object.create(HTMLImageElement.prototype);
+  Object.defineProperties(img, {
+    naturalWidth: { value: 0, writable: true },
+    naturalHeight: { value: 0, writable: true },
+    width: { value: 0, writable: true },
+    height: { value: 0, writable: true },
+    src: { value: '', writable: true }
+  });
+  return img;
+}
+
+function createMockHTMLVideoElement() {
+  const video = Object.create(HTMLVideoElement.prototype);
+  Object.defineProperties(video, {
+    videoWidth: { value: 0, writable: true },
+    videoHeight: { value: 0, writable: true },
+    width: { value: 0, writable: true },
+    height: { value: 0, writable: true }
+  });
+  return video;
+}
+
 // Mock MediaPipe modules
 vi.mock('@mediapipe/tasks-vision', () => ({
   FilesetResolver: {
@@ -18,6 +42,7 @@ vi.mock('@mediapipe/tasks-vision', () => ({
       embed: vi.fn().mockResolvedValue({ embeddings: [new Float32Array(128)] }),
       embedForVideo: vi.fn().mockResolvedValue({ embeddings: [new Float32Array(128)] }),
     }),
+    cosineSimilarity: vi.fn().mockReturnValue(0.5),
   },
 }));
 
@@ -57,23 +82,23 @@ describe('FaceDetector', () => {
   });
 
   describe('detectFromImage', () => {
-    it('should throw error if not initialized', async () => {
-      const img = new Image();
-      await expect(detector.detectFromImage(img)).rejects.toThrow('Face detector not initialized');
+    it('should throw error if not initialized', () => {
+      const img = createMockHTMLImageElement() as any;
+      expect(() => detector.detectFromImage(img)).toThrow('Face detector not initialized');
     });
 
     it('should detect faces from image when initialized', async () => {
       await detector.initialize();
-      const img = new Image();
+      const img = createMockHTMLImageElement() as any;
       const detections = await detector.detectFromImage(img);
       expect(Array.isArray(detections)).toBe(true);
     });
   });
 
   describe('detectFromVideo', () => {
-    it('should throw error if not initialized', async () => {
-      const video = document.createElement('video');
-      await expect(detector.detectFromVideo(video, 0)).rejects.toThrow('Face detector not initialized');
+    it('should throw error if not initialized', () => {
+      const video = createMockHTMLVideoElement() as any;
+      expect(() => detector.detectFromVideo(video, 0)).toThrow('Face detector not initialized');
     });
 
     it('should detect faces from video when initialized', async () => {
@@ -82,7 +107,7 @@ describe('FaceDetector', () => {
         mode: 'VIDEO',
       });
       await videoDetector.initialize();
-      const video = document.createElement('video');
+      const video = createMockHTMLVideoElement() as any;
       const detections = await videoDetector.detectFromVideo(video, 0);
       expect(Array.isArray(detections)).toBe(true);
     });
@@ -91,10 +116,10 @@ describe('FaceDetector', () => {
   describe('embed', () => {
     it('should throw error if embedder not initialized', async () => {
       await detector.initialize();
-      const img = new Image();
+      const img = createMockHTMLImageElement() as any;
       const detection = { boundingBox: { originX: 0, originY: 0, width: 100, height: 100 } };
-      await expect(detector.embed({ source: img, detection: detection as any }))
-        .rejects.toThrow('Face embedder not initialized');
+      expect(() => detector.embed({ source: img, detection: detection as any }))
+        .toThrow('Face embedder not initialized');
     });
 
     it('should generate embeddings when properly initialized', async () => {
@@ -104,7 +129,7 @@ describe('FaceDetector', () => {
       });
       await detectorWithEmbedding.initialize();
       
-      const img = new Image();
+      const img = createMockHTMLImageElement() as any;
       img.naturalWidth = 640;
       img.naturalHeight = 480;
       
@@ -130,7 +155,7 @@ describe('FaceDetector', () => {
       });
       await videoDetector.initialize();
       
-      const video = document.createElement('video');
+      const video = createMockHTMLVideoElement() as any;
       video.videoWidth = 640;
       video.videoHeight = 480;
       
@@ -155,7 +180,7 @@ describe('FaceDetector', () => {
       });
       await detectorWithEmbedding.initialize();
       
-      const img = new Image();
+      const img = createMockHTMLImageElement() as any;
       const detection = { categories: [{ score: 0.9, index: 0, categoryName: 'face' }] };
       
       const result = await detectorWithEmbedding.embed({ 
@@ -174,11 +199,11 @@ describe('FaceDetector', () => {
       });
       await videoDetector.initialize();
       
-      const img = new Image();
+      const img = createMockHTMLImageElement() as any;
       const detection = { boundingBox: { originX: 0, originY: 0, width: 100, height: 100 } };
       
-      await expect(videoDetector.embed({ source: img, detection: detection as any }))
-        .rejects.toThrow('Cannot embed image in video mode');
+      expect(() => videoDetector.embed({ source: img, detection: detection as any }))
+        .toThrow('Cannot embed image in video mode');
     });
 
     it('should validate mode compatibility for video embedding', async () => {
@@ -189,11 +214,11 @@ describe('FaceDetector', () => {
       });
       await imageDetector.initialize();
       
-      const video = document.createElement('video');
+      const video = createMockHTMLVideoElement() as any;
       const detection = { boundingBox: { originX: 0, originY: 0, width: 100, height: 100 } };
       
-      await expect(imageDetector.embed({ source: video, detection: detection as any }))
-        .rejects.toThrow('Cannot embed video in image mode');
+      expect(() => imageDetector.embed({ source: video, detection: detection as any }))
+        .toThrow('Cannot embed video in image mode');
     });
 
     it('should throw error for invalid source type', async () => {
@@ -206,10 +231,10 @@ describe('FaceDetector', () => {
       const invalidSource = document.createElement('div');
       const detection = { boundingBox: { originX: 0, originY: 0, width: 100, height: 100 } };
       
-      await expect(detectorWithEmbedding.embed({ 
+      expect(() => detectorWithEmbedding.embed({ 
         source: invalidSource as any, 
         detection: detection as any 
-      })).rejects.toThrow('Invalid source type');
+      })).toThrow('Invalid source type');
     });
   });
 
@@ -260,7 +285,7 @@ describe('FaceDetector', () => {
         // Expected to fail
       }
       
-      const img = new Image();
+      const img = createMockHTMLImageElement() as any;
       expect(() => errorDetector.detectFromImage(img))
         .toThrow('Face detector not initialized');
     });
@@ -323,7 +348,7 @@ describe('FaceDetector', () => {
       
       await strictDetector.initialize();
       
-      const img = new Image();
+      const img = createMockHTMLImageElement() as any;
       const detections = await strictDetector.detectFromImage(img);
       expect(Array.isArray(detections)).toBe(true);
     });
@@ -341,7 +366,7 @@ describe('FaceDetector', () => {
     });
 
     it('should handle normalized bounding boxes', async () => {
-      const img = new Image();
+      const img = createMockHTMLImageElement() as any;
       img.naturalWidth = 640;
       img.naturalHeight = 480;
       
@@ -358,7 +383,7 @@ describe('FaceDetector', () => {
     });
 
     it('should handle pixel-based bounding boxes', async () => {
-      const img = new Image();
+      const img = createMockHTMLImageElement() as any;
       img.naturalWidth = 640;
       img.naturalHeight = 480;
       
@@ -375,7 +400,7 @@ describe('FaceDetector', () => {
     });
 
     it('should clamp bounding boxes to valid ranges', async () => {
-      const img = new Image();
+      const img = createMockHTMLImageElement() as any;
       img.naturalWidth = 640;
       img.naturalHeight = 480;
       
@@ -393,7 +418,7 @@ describe('FaceDetector', () => {
     });
 
     it('should throw error for invalid bounding box dimensions', async () => {
-      const img = new Image();
+      const img = createMockHTMLImageElement() as any;
       img.naturalWidth = 640;
       img.naturalHeight = 480;
       
@@ -401,10 +426,10 @@ describe('FaceDetector', () => {
         boundingBox: { originX: 0.5, originY: 0.5, width: 0, height: 0 } // Zero dimensions
       };
       
-      await expect(detectorWithEmbedding.embed({ 
+      expect(() => detectorWithEmbedding.embed({ 
         source: img, 
         detection: detection as any 
-      })).rejects.toThrow('Invalid bounding box dimensions');
+      })).toThrow('Invalid bounding box dimensions');
     });
   });
 }); 
