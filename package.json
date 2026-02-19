@@ -77,7 +77,7 @@
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vite-plugin-dts": "^4.3.0",
-    "vitest": "^2.1.8"
+    "vitest": "^4.0.18"
   },
   "peerDependencies": {
     "@mediapipe/tasks-vision": ">=0.10.0",
