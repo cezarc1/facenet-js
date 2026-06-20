@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { ClusteringAlgorithm, ClusteringOptions } from '../../src/FaceClusterer';
+import { ClusteringAlgorithm, ClusteringOptions } from 'facenet-js';
 
 interface ClusteringSettingsProps {
   options: ClusteringOptions;
@@ -84,7 +84,7 @@ export const ClusteringSettings = ({ options, onOptionsChange, totalFaces, disab
   const [maxClustersError, setMaxClustersError] = useState<string>('');
   const [maxClustersWarning, setMaxClustersWarning] = useState<string>('');
   const handleAlgorithmChange = useCallback((algorithm: ClusteringAlgorithm) => {
-    let newOptions: ClusteringOptions = { ...options, algorithm };
+    const newOptions: ClusteringOptions = { ...options, algorithm };
     switch (algorithm) {
       case 'KMEANS':
         newOptions.maxClusters = Math.min(Math.ceil(totalFaces / 3), 10);

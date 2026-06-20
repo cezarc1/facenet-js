@@ -1,33 +1,37 @@
 import { DBSCAN, KMEANS, OPTICS } from 'density-clustering';
-import { similarity } from 'ml-distance';
 import { agnes } from 'ml-hclust';
-import { Embedding, EmbeddingResult } from './types';
+import { type Embedding, type EmbeddingResult } from './types';
 
 export type ClusteringAlgorithm = 'DBSCAN' | 'HIERARCHICAL' | 'KMEANS' | 'OPTICS';
 
 
 export interface ClusteringOptions {
-  /** The clustering algorithm to use.
+  /**
+   * The clustering algorithm to use.
    * Default: 'DBSCAN'
    */
   algorithm?: ClusteringAlgorithm;
 
-  /** Similarity threshold (0-1). Higher values require more similarity to cluster together.
+  /**
+   * Similarity threshold (0-1). Higher values require more similarity to cluster together.
    * Default: 0.6
    */
   threshold?: number;
 
-  /** Minimum number of points required to form a cluster (DBSCAN/OPTICS).
+  /**
+   * Minimum number of points required to form a cluster (DBSCAN/OPTICS).
    * Default: 2
    */
   minSamples?: number;
 
-  /** Maximum number of clusters to create (KMEANS).
+  /**
+   * Maximum number of clusters to create (KMEANS).
    * Default: 100
    */
   maxClusters?: number;
 
-  /** Distance metric to use.
+  /**
+   * Distance metric to use.
    * Default: 'cosine'
    */
   distanceMetric?: 'cosine' | 'euclidean';
@@ -67,10 +71,14 @@ export const DEFAULT_OPTIONS: Required<ClusteringOptions> = {
   distanceMetric: 'cosine',
 };
 
+interface IndexedEmbeddingVector {
+  vector: Float32Array;
+  originalIndex: number;
+}
+
 /**
  * A class for clustering face embeddings to group similar faces together.
  * This clustering happens on the CPU.
- *
  * @example
  * ```ts
  * const clusterer = new FaceClusterer({
@@ -96,7 +104,7 @@ export class FaceClusterer {
     this.options = {
       ...DEFAULT_OPTIONS,
       ...options,
-    } as Required<ClusteringOptions>;
+    };
     if (this.options.algorithm === 'DBSCAN') {
       this.dbscan = new DBSCAN();
     } else if (this.options.algorithm === 'OPTICS') {
@@ -108,7 +116,6 @@ export class FaceClusterer {
 
   /**
    * Clusters an array of face embeddings using the configured algorithm.
-   *
    * @param embeddings - Array of face embedding results to cluster
    * @returns Clustering result with both clusters and outliers
    */
@@ -116,10 +123,11 @@ export class FaceClusterer {
     if (!embeddings || embeddings.length === 0) {
       throw new Error('No embeddings provided for clustering');
     }
-    const embeddingVectors = this.extractEmbeddingVectors(embeddings);
-    if (embeddingVectors.length === 0) {
-      throw new Error('embeddings  to cluster must be >0');
+    const indexedEmbeddingVectors = this.extractEmbeddingVectors(embeddings);
+    if (indexedEmbeddingVectors.length === 0) {
+      throw new Error('No valid embedding vectors found');
     }
+    const embeddingVectors = indexedEmbeddingVectors.map(({ vector }) => vector);
     let clusterLabels: number[];
     switch (this.options.algorithm) {
       case 'DBSCAN':
@@ -137,16 +145,29 @@ export class FaceClusterer {
       default:
         throw new Error(`Unsupported clustering algorithm: ${this.options.algorithm}`);
     }
-    return this.buildClusterResult(embeddingVectors, clusterLabels, embeddings);
+    return this.buildClusterResult(
+      indexedEmbeddingVectors,
+      clusterLabels,
+      embeddings
+    );
   }
 
-  private extractEmbeddingVectors(embeddings: EmbeddingResult[]): Float32Array[] {
-    const vectors: Float32Array[] = [];
-    for (const embeddingResult of embeddings) {
-      if (embeddingResult.embeddings && embeddingResult.embeddings.length > 0) {
+  private extractEmbeddingVectors(embeddings: EmbeddingResult[]): IndexedEmbeddingVector[] {
+    const vectors: IndexedEmbeddingVector[] = [];
+    for (let originalIndex = 0; originalIndex < embeddings.length; originalIndex++) {
+      const embeddingResult = embeddings[originalIndex];
+      if (embeddingResult?.embeddings && embeddingResult.embeddings.length > 0) {
         const embedding = embeddingResult.embeddings[0];
-        if (embedding && embedding.floatEmbedding) {
-          vectors.push(new Float32Array(embedding.floatEmbedding));
+        const floatEmbedding = embedding?.floatEmbedding;
+        if (
+          floatEmbedding &&
+          floatEmbedding.length > 0 &&
+          floatEmbedding.every(Number.isFinite)
+        ) {
+          vectors.push({
+            vector: new Float32Array(floatEmbedding),
+            originalIndex,
+          });
         }
       }
     }
@@ -221,7 +242,8 @@ export class FaceClusterer {
     return matrix;
   }
 
-  /** https://en.wikipedia.org/wiki/Cosine_similarity.
+  /**
+   * https://en.wikipedia.org/wiki/Cosine_similarity.
    *  Note that the distance is 1 - cosine similarity.
    */
   private static cosineDistance(a: number[], b: number[]): number {
@@ -262,6 +284,13 @@ export class FaceClusterer {
     return Math.sqrt(sumSquaredDiffs);
   }
 
+  private static cosineSimilarity(a: number[], b: number[]): number {
+    if (a.length !== b.length) {
+      return Number.NaN;
+    }
+    return 1 - FaceClusterer.cosineDistance(a, b);
+  }
+
   private static clustersToLabels(clusters: number[][], totalPoints: number): number[] {
     const labels = new Int32Array(totalPoints).fill(-1);
     const assignmentCount = new Map<number, number>();
@@ -296,15 +325,27 @@ export class FaceClusterer {
   }
 
   private buildClusterResult(
-    embeddingVectors: Float32Array[],
+    indexedEmbeddingVectors: IndexedEmbeddingVector[],
     clusterLabels: number[],
     originalEmbeddings: EmbeddingResult[]
   ): ClusterResult {
+    const embeddingVectors = indexedEmbeddingVectors.map(({ vector }) => vector);
+    const validOriginalIndices = new Set(
+      indexedEmbeddingVectors.map(({ originalIndex }) => originalIndex)
+    );
     const clusterMap = new Map<number, number[]>();
-    const outliers: number[] = [];
+    const outliers = originalEmbeddings
+      .map((_, originalIndex) => originalIndex)
+      .filter(originalIndex => !validOriginalIndices.has(originalIndex));
+
     clusterLabels.forEach((label, index) => {
+      const originalIndex = indexedEmbeddingVectors[index]?.originalIndex;
+      if (originalIndex === undefined) {
+        return;
+      }
+
       if (label === -1) {
-        outliers.push(index);
+        outliers.push(originalIndex);
       } else {
         if (!clusterMap.has(label)) {
           clusterMap.set(label, []);
@@ -321,11 +362,15 @@ export class FaceClusterer {
 
     const clusters: FaceCluster[] = [];
     let clusterIdCounter = 0;
-    for (const [_, memberIndices] of mergedClusterMap) {
+    for (const memberIndices of mergedClusterMap.values()) {
       if (memberIndices && memberIndices.length > 0) {
+        const originalMemberIndices = memberIndices
+          .map(index => indexedEmbeddingVectors[index]?.originalIndex)
+          .filter((index): index is number => index !== undefined);
         const cluster = this.buildFaceCluster(
           clusterIdCounter.toString(),
-          memberIndices!,
+          memberIndices,
+          originalMemberIndices,
           embeddingVectors
         );
         clusters.push(cluster);
@@ -334,7 +379,7 @@ export class FaceClusterer {
     }
     return {
       clusters,
-      outliers,
+      outliers: outliers.sort((a, b) => a - b),
       algorithm: this.options.algorithm,
       totalEmbeddings: originalEmbeddings.length,
       options: this.options,
@@ -374,11 +419,11 @@ export class FaceClusterer {
         if (distance < (1 - this.options.threshold)) {
           indicesB.forEach((idx: number) => mergedIndices.add(idx));
           processed.add(labelB);
-          console.log(`Merging duplicate clusters ${labelA} and ${labelB} (distance: ${distance.toFixed(3)})`);
+          console.info(`Merging duplicate clusters ${labelA} and ${labelB} (distance: ${distance.toFixed(3)})`);
         }
       }
 
-      mergedMap.set(labelA, Array.from(mergedIndices) as number[]);
+      mergedMap.set(labelA, Array.from(mergedIndices));
     }
 
     return mergedMap;
@@ -387,20 +432,21 @@ export class FaceClusterer {
   private buildFaceCluster(
     id: string,
     memberIndices: number[],
+    originalMemberIndices: number[],
     embeddingVectors: Float32Array[]
   ): FaceCluster {
     const centroid = this.calculateCentroid(memberIndices, embeddingVectors);
     const confidence = this.calculateClusterConfidence(memberIndices, embeddingVectors, centroid);
     return {
       id,
-      memberIndices,
+      memberIndices: originalMemberIndices,
       centroid: {
         floatEmbedding: Array.from(centroid),
         headIndex: 0,
         headName: 'face_cluster',
-      } as unknown as Embedding,
+      },
       confidence,
-      size: memberIndices.length,
+      size: originalMemberIndices.length,
     };
   }
 
@@ -451,8 +497,8 @@ export class FaceClusterer {
     for (const index of memberIndices) {
       const vector = embeddingVectors[index]!;
       if (vector) {
-        const vectorArray = Array.from(vector!);
-        const sim = similarity.cosine(vectorArray, centroidArray);
+        const vectorArray = Array.from(vector);
+        const sim = FaceClusterer.cosineSimilarity(vectorArray, centroidArray);
         if (!isNaN(sim) && isFinite(sim)) {
           totalSimilarity += sim;
         }

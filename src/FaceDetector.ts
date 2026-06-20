@@ -1,25 +1,25 @@
 import {
-  Detection,
+  type Detection,
   FaceDetector as FaceDetectorMediaPipe,
   FilesetResolver,
   ImageEmbedder,
 } from '@mediapipe/tasks-vision';
 import {
-  Embedding,
-  EmbeddingRequest,
-  EmbeddingResult,
-  FaceDetection,
-  FaceDetectionOptions,
-  FaceDetectorState,
+  type Embedding,
+  type EmbeddingRequest,
+  type EmbeddingResult,
+  type FaceDetection,
+  type FaceDetectionOptions,
+  type FaceDetectorState,
 } from './types';
 
 const DEFAULT_DETECTION_MODEL =
   'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
-const DEFAULT_WASM_PATH = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm';
+const MEDIAPIPE_TASKS_VISION_VERSION = '0.10.35';
+const DEFAULT_WASM_PATH = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_TASKS_VISION_VERSION}/wasm`;
 
 /**
  * A class for detecting and embedding faces.
- *
  * @example
  * ```ts
  * const faceDetector = new FaceDetector({
@@ -47,6 +47,8 @@ export class FaceDetector {
   private options: FaceDetectionOptions;
   private _state: FaceDetectorState = 'not_initialized';
   private _error: Error | null = null;
+  private initializationPromise: Promise<void> | null = null;
+  private lifecycleId = 0;
 
   constructor(options: FaceDetectionOptions) {
     this.options = options;
@@ -65,12 +67,29 @@ export class FaceDetector {
       return;
     }
     if (this.state === 'initializing') {
-      return;
+      return this.initializationPromise ?? undefined;
     }
 
+    this._state = 'initializing';
+    this._error = null;
+    const lifecycleId = this.lifecycleId;
+    const initializationPromise = this.initializeTasks(lifecycleId);
+    this.initializationPromise = initializationPromise;
+
     try {
-      this._state = 'initializing';
-      this._error = null;
+      await initializationPromise;
+    } finally {
+      if (this.initializationPromise === initializationPromise) {
+        this.initializationPromise = null;
+      }
+    }
+  }
+
+  private async initializeTasks(lifecycleId: number) {
+    let nextFaceDetector: FaceDetectorMediaPipe | null = null;
+    let nextFaceEmbedder: ImageEmbedder | null = null;
+
+    try {
       const vision = await FilesetResolver.forVisionTasks(
         this.options.wasmPath || DEFAULT_WASM_PATH
       );
@@ -95,11 +114,11 @@ export class FaceDetector {
           }),
         ]);
 
-        this.faceDetector = faceDetector;
-        this.faceEmbedder = faceEmbedder;
+        nextFaceDetector = faceDetector;
+        nextFaceEmbedder = faceEmbedder;
       } else {
         // Create face detector but not face embedder if no embedding model path
-        this.faceDetector = await FaceDetectorMediaPipe.createFromOptions(vision, {
+        nextFaceDetector = await FaceDetectorMediaPipe.createFromOptions(vision, {
           baseOptions: {
             modelAssetPath: this.options.detectionModelPath || DEFAULT_DETECTION_MODEL,
             delegate: this.options.device,
@@ -109,17 +128,47 @@ export class FaceDetector {
         });
       }
 
+      if (lifecycleId !== this.lifecycleId) {
+        this.closeCreatedTasks(nextFaceDetector, nextFaceEmbedder);
+        return;
+      }
+
+      this.faceDetector = nextFaceDetector;
+      this.faceEmbedder = nextFaceEmbedder;
       this._state = 'initialized';
     } catch (error) {
-      this._state = 'error';
-      this._error = error instanceof Error ? error : new Error(String(error));
+      this.closeCreatedTasks(nextFaceDetector, nextFaceEmbedder);
+      if (lifecycleId === this.lifecycleId) {
+        this._state = 'error';
+        this._error = error instanceof Error ? error : new Error(String(error));
+      }
       throw error;
     }
   }
 
   /**
+   * Releases MediaPipe task resources and resets this wrapper to an uninitialized state.
+   */
+  close(): void {
+    this.lifecycleId++;
+    this.initializationPromise = null;
+    this.closeCreatedTasks(this.faceDetector, this.faceEmbedder);
+    this.faceDetector = null;
+    this.faceEmbedder = null;
+    this._state = 'not_initialized';
+    this._error = null;
+  }
+
+  private closeCreatedTasks(
+    faceDetector: FaceDetectorMediaPipe | null,
+    faceEmbedder: ImageEmbedder | null
+  ) {
+    faceDetector?.close();
+    faceEmbedder?.close();
+  }
+
+  /**
    * Detects faces from an image element.
-   *
    * @example
    * ```ts
    * const detections = faceDetector.detectFromImage(imageElement);
@@ -141,7 +190,6 @@ export class FaceDetector {
 
   /**
    * Detects faces from a video element.
-   *
    * @example
    * ```ts
    * const detections = faceDetector.detectFromVideo(videoElement, timestamp);
@@ -202,7 +250,6 @@ export class FaceDetector {
   /**
    * Embeds a detected face into a tensor.
    * The resulting tensor can be then compared to other embeddings using cosine similarity or other distance metrics.
-   *
    * @example
    * ```ts
    * const result = imageFaceDetector.embed({
@@ -275,7 +322,6 @@ export class FaceDetector {
   /**
    * Computes the cosine similarity between two embeddings.
    * The cosine similarity score is between -1 and 1, where 1 means the embeddings are identical, and -1 means they are completely different.
-   *
    * @example
    * ```ts
    * const similarity = FaceDetector.cosineSimilarity(faceEmbedding1, faceEmbedding2);

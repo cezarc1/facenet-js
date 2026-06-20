@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useFaceDetector } from './useFaceDetection';
-import { Detection, EmbeddingResult } from '../../types';
+import { type Detection, type EmbeddingResult } from '../../types';
 
 export interface FaceSource {
   /** The image element containing faces */
@@ -22,13 +22,18 @@ export interface EmbeddingWithSource {
   sourceId?: string;
 }
 
+const EMPTY_PROGRESS = { current: 0, total: 0, percentage: 0 };
+
+const isEmptyProgress = (progress: typeof EMPTY_PROGRESS) =>
+  progress.current === 0 && progress.total === 0 && progress.percentage === 0;
+
+const nextTask = () => new Promise<void>(resolve => setTimeout(resolve, 0));
+
 /**
  * React hook for generating embeddings from multiple face sources.
  * Automatically detects faces and generates embeddings for each detected face.
- *
  * @param sources - Array of image sources to process
  * @returns Object containing embeddings, loading state, and any errors
- *
  * @example
  * ```tsx
  * const sources = [
@@ -68,11 +73,17 @@ export const useMultiFaceEmbeddings = (
   const [processingError, setProcessingError] = useState<Error | null>(null);
   const [progress, setProgress] = useState({ current: 0, total: 0, percentage: 0 });
 
-  const processEmbeddings = useCallback(async () => {
+  const processEmbeddings = useCallback(async (shouldCancel: () => boolean) => {
     if (!faceDetector || detectorLoading || !sources.length) {
-      setEmbeddings([]);
-      setEmbeddingsWithSource([]);
-      setProgress({ current: 0, total: 0, percentage: 0 });
+      if (shouldCancel()) {
+        return;
+      }
+
+      setEmbeddings(prev => (prev.length === 0 ? prev : []));
+      setEmbeddingsWithSource(prev => (prev.length === 0 ? prev : []));
+      setIsProcessing(false);
+      setProcessingError(prev => (prev === null ? prev : null));
+      setProgress(prev => (isEmptyProgress(prev) ? prev : EMPTY_PROGRESS));
       return;
     }
 
@@ -84,16 +95,26 @@ export const useMultiFaceEmbeddings = (
       const allEmbeddings: EmbeddingResult[] = [];
       const allEmbeddingsWithSource: EmbeddingWithSource[] = [];
 
+      await nextTask();
+
       for (let sourceIndex = 0; sourceIndex < sources.length; sourceIndex++) {
+        if (shouldCancel()) {
+          return;
+        }
+
         const source = sources[sourceIndex];
         if (!source) continue;
 
-        // Update progress
         setProgress({
           current: sourceIndex,
           total: sources.length,
           percentage: Math.round((sourceIndex / sources.length) * 100),
         });
+
+        await nextTask();
+        if (shouldCancel()) {
+          return;
+        }
 
         try {
           // Detect faces if not provided
@@ -131,6 +152,10 @@ export const useMultiFaceEmbeddings = (
         }
       }
 
+      if (shouldCancel()) {
+        return;
+      }
+
       setEmbeddings(allEmbeddings);
       setEmbeddingsWithSource(allEmbeddingsWithSource);
       setProgress({
@@ -144,12 +169,22 @@ export const useMultiFaceEmbeddings = (
       setEmbeddings([]);
       setEmbeddingsWithSource([]);
     } finally {
-      setIsProcessing(false);
+      if (!shouldCancel()) {
+        setIsProcessing(false);
+      }
     }
   }, [faceDetector, detectorLoading, sources]);
 
   useEffect(() => {
-    processEmbeddings();
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      void processEmbeddings(() => cancelled);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [processEmbeddings]);
 
   return {

@@ -9,10 +9,10 @@ vi.mock('@mediapipe/tasks-vision', () => ({
     forVisionTasks: vi.fn().mockResolvedValue({}),
   },
   FaceDetector: {
-    createFromOptions: vi.fn().mockResolvedValue({
+    createFromOptions: vi.fn().mockImplementation(async () => ({
       detect: vi.fn().mockImplementation(() => {
         // Return mock detections with varying confidence
-        return Promise.resolve({
+        return {
           detections: [
             {
               categories: [{ score: 0.95, index: 0, categoryName: 'face' }],
@@ -23,13 +23,13 @@ vi.mock('@mediapipe/tasks-vision', () => ({
               boundingBox: { originX: 0.6, originY: 0.2, width: 0.25, height: 0.35 }
             }
           ]
-        });
+        };
       }),
-      detectForVideo: vi.fn().mockResolvedValue({ detections: [] }),
-    }),
+      detectForVideo: vi.fn().mockReturnValue({ detections: [] }),
+    })),
   },
   ImageEmbedder: {
-    createFromOptions: vi.fn().mockResolvedValue({
+    createFromOptions: vi.fn().mockImplementation(async () => ({
       embed: vi.fn().mockImplementation((source, options) => {
         // Return different embeddings based on bounding box position
         // This simulates different faces having different features
@@ -38,25 +38,25 @@ vi.mock('@mediapipe/tasks-vision', () => ({
         
         if (x < 0.5) {
           // "Person A" - similar embeddings
-          return Promise.resolve({
+          return {
             embeddings: [{
               floatEmbedding: [0.8, 0.1, 0.2, 0.9, 0.3], // Person A features
               headIndex: 0,
               headName: 'face'
             }]
-          });
+          };
         } else {
           // "Person B" - different embeddings
-          return Promise.resolve({
+          return {
             embeddings: [{
               floatEmbedding: [0.1, 0.9, 0.8, 0.2, 0.7], // Person B features
               headIndex: 0,
               headName: 'face'
             }]
-          });
+          };
         }
       }),
-    }),
+    })),
     cosineSimilarity: vi.fn().mockImplementation((a, b) => {
       // Simple similarity calculation for testing
       const aVec = a.floatEmbedding;
@@ -74,8 +74,9 @@ vi.mock('@mediapipe/tasks-vision', () => ({
 
 // Mock clustering libraries with realistic behavior
 vi.mock('density-clustering', () => ({
-  DBSCAN: vi.fn().mockImplementation(() => ({
-    run: vi.fn().mockImplementation((dataset, epsilon, minSamples) => {
+  DBSCAN: vi.fn().mockImplementation(function () {
+    return {
+      run: vi.fn().mockImplementation((dataset) => {
       // Simulate clustering based on similarity
       if (dataset.length >= 4) {
         // Group similar embeddings together
@@ -84,20 +85,29 @@ vi.mock('density-clustering', () => ({
         return [[0, 1]]; // One cluster
       }
       return []; // No clusters
-    })
-  }))
-}));
-
-vi.mock('ml-distance', () => ({
-  similarity: {
-    cosine: vi.fn().mockImplementation((a, b) => {
-      // Mock cosine similarity - higher for similar vectors
-      const sumA = a.reduce((sum: number, val: number) => sum + val, 0);
-      const sumB = b.reduce((sum: number, val: number) => sum + val, 0);
-      const diff = Math.abs(sumA - sumB);
-      return Math.max(0, 1 - diff / 10); // Scale to 0-1 range
-    })
-  }
+    }),
+    };
+  }),
+  KMEANS: vi.fn().mockImplementation(function () {
+    return {
+      run: vi.fn().mockImplementation((dataset) => {
+        if (dataset.length >= 2) {
+          return [[0, 1], ...dataset.slice(2).map((_, index) => [index + 2])];
+        }
+        return dataset.length === 1 ? [[0]] : [];
+      }),
+    };
+  }),
+  OPTICS: vi.fn().mockImplementation(function () {
+    return {
+      run: vi.fn().mockImplementation((dataset) => {
+        if (dataset.length >= 2) {
+          return [[0, 1], ...dataset.slice(2).map((_, index) => [index + 2])];
+        }
+        return dataset.length === 1 ? [[0]] : [];
+      }),
+    };
+  }),
 }));
 
 describe('Face Clustering Integration Tests', () => {
@@ -136,7 +146,7 @@ describe('Face Clustering Integration Tests', () => {
       // Step 2: Detect faces in all images
       const allDetections = [];
       for (const image of images) {
-        const detections = await faceDetector.detectFromImage(image);
+        const detections = faceDetector.detectFromImage(image);
         allDetections.push(...detections);
       }
 
@@ -147,7 +157,7 @@ describe('Face Clustering Integration Tests', () => {
       for (let i = 0; i < allDetections.length; i++) {
         const detection = allDetections[i];
         const imageIndex = Math.floor(i / 2);
-        const embedding = await faceDetector.embed({
+        const embedding = faceDetector.embed({
           source: images[imageIndex],
           detection
         });
@@ -178,17 +188,16 @@ describe('Face Clustering Integration Tests', () => {
       const imageWithNoFaces = createMockImage('landscape.jpg');
       
       // Mock no detections for this test
-      const mockDetector = vi.mocked(faceDetector['faceDetector']);
+      const mockDetector = vi.mocked(faceDetector.faceDetector);
       if (mockDetector) {
-        mockDetector.detect = vi.fn().mockResolvedValueOnce({ detections: [] });
+        mockDetector.detect = vi.fn().mockReturnValueOnce({ detections: [] });
       }
 
-      const detections = await faceDetector.detectFromImage(imageWithNoFaces);
+      const detections = faceDetector.detectFromImage(imageWithNoFaces);
       expect(detections).toHaveLength(0);
 
       // Should handle empty embeddings array
-      const clusterResult = faceClusterer.cluster([]);
-      expect(() => clusterResult).toThrow('No embeddings provided for clustering');
+      expect(() => faceClusterer.cluster([])).toThrow('No embeddings provided for clustering');
     });
 
     it('should produce consistent results across runs', async () => {
@@ -198,20 +207,20 @@ describe('Face Clustering Integration Tests', () => {
       ];
 
       // Run the workflow twice
-      const runWorkflow = async () => {
+      const runWorkflow = () => {
         const embeddings: EmbeddingResult[] = [];
         for (const image of images) {
-          const detections = await faceDetector.detectFromImage(image);
+          const detections = faceDetector.detectFromImage(image);
           for (const detection of detections) {
-            const embedding = await faceDetector.embed({ source: image, detection });
+            const embedding = faceDetector.embed({ source: image, detection });
             if (embedding) embeddings.push(embedding);
           }
         }
         return faceClusterer.cluster(embeddings);
       };
 
-      const result1 = await runWorkflow();
-      const result2 = await runWorkflow();
+      const result1 = runWorkflow();
+      const result2 = runWorkflow();
 
       // Results should be consistent
       expect(result1.clusters.length).toBe(result2.clusters.length);
@@ -232,16 +241,16 @@ describe('Face Clustering Integration Tests', () => {
 
       testEmbeddings = [];
       for (const image of images) {
-        const detections = await faceDetector.detectFromImage(image);
+        const detections = faceDetector.detectFromImage(image);
         for (const detection of detections) {
-          const embedding = await faceDetector.embed({ source: image, detection });
+          const embedding = faceDetector.embed({ source: image, detection });
           if (embedding) testEmbeddings.push(embedding);
         }
       }
     });
 
     it('should compare different clustering algorithms', () => {
-      const algorithms: Array<ClusteringOptions['algorithm']> = ['DBSCAN', 'HIERARCHICAL', 'KMEANS'];
+      const algorithms: ClusteringOptions['algorithm'][] = ['DBSCAN', 'HIERARCHICAL', 'KMEANS'];
       const results = algorithms.map(algorithm => {
         const clusterer = new FaceClusterer({ algorithm, threshold: 0.7 });
         return clusterer.cluster(testEmbeddings);
@@ -269,7 +278,11 @@ describe('Face Clustering Integration Tests', () => {
 
       // Higher thresholds should generally produce more clusters or outliers
       results.forEach(result => {
-        expect(result.clusters.length + result.outliers.length).toBe(testEmbeddings.length);
+        const assignedCount = result.clusters.reduce(
+          (count, cluster) => count + cluster.memberIndices.length,
+          result.outliers.length
+        );
+        expect(assignedCount).toBe(testEmbeddings.length);
       });
     });
   });
@@ -283,9 +296,9 @@ describe('Face Clustering Integration Tests', () => {
       
       const embeddings: EmbeddingResult[] = [];
       for (const image of images) {
-        const detections = await faceDetector.detectFromImage(image);
+        const detections = faceDetector.detectFromImage(image);
         for (const detection of detections) {
-          const embedding = await faceDetector.embed({ source: image, detection });
+          const embedding = faceDetector.embed({ source: image, detection });
           if (embedding) embeddings.push(embedding);
         }
       }
@@ -302,9 +315,9 @@ describe('Face Clustering Integration Tests', () => {
       const image = createMockImage('single-face.jpg');
       
       // Mock single detection
-      const mockDetector = vi.mocked(faceDetector['faceDetector']);
+      const mockDetector = vi.mocked(faceDetector.faceDetector);
       if (mockDetector) {
-        mockDetector.detect = vi.fn().mockResolvedValueOnce({
+        mockDetector.detect = vi.fn().mockReturnValueOnce({
           detections: [{
             categories: [{ score: 0.9, index: 0, categoryName: 'face' }],
             boundingBox: { originX: 0.2, originY: 0.2, width: 0.4, height: 0.4 }
@@ -312,10 +325,10 @@ describe('Face Clustering Integration Tests', () => {
         });
       }
 
-      const detections = await faceDetector.detectFromImage(image);
+      const detections = faceDetector.detectFromImage(image);
       expect(detections).toHaveLength(1);
 
-      const embedding = await faceDetector.embed({ source: image, detection: detections[0] });
+      const embedding = faceDetector.embed({ source: image, detection: detections[0] });
       expect(embedding).toBeDefined();
 
       if (embedding) {
@@ -333,28 +346,32 @@ describe('Face Clustering Integration Tests', () => {
       const image = createMockImage('problematic.jpg');
       
       // Mock detection failure
-      const mockDetector = vi.mocked(faceDetector['faceDetector']);
+      const mockDetector = vi.mocked(faceDetector.faceDetector);
       if (mockDetector) {
-        mockDetector.detect = vi.fn().mockRejectedValueOnce(new Error('Detection failed'));
+        mockDetector.detect = vi.fn().mockImplementationOnce(() => {
+          throw new Error('Detection failed');
+        });
       }
 
-      await expect(faceDetector.detectFromImage(image)).rejects.toThrow('Detection failed');
+      expect(() => faceDetector.detectFromImage(image)).toThrow('Detection failed');
     });
 
     it('should handle embedding failures gracefully', async () => {
       const image = createMockImage('embed-fail.jpg');
-      const detections = await faceDetector.detectFromImage(image);
+      const detections = faceDetector.detectFromImage(image);
       
       // Mock embedding failure
-      const mockEmbedder = vi.mocked(faceDetector['faceEmbedder']);
+      const mockEmbedder = vi.mocked(faceDetector.faceEmbedder);
       if (mockEmbedder) {
-        mockEmbedder.embed = vi.fn().mockRejectedValueOnce(new Error('Embedding failed'));
+        mockEmbedder.embed = vi.fn().mockImplementationOnce(() => {
+          throw new Error('Embedding failed');
+        });
       }
 
-      await expect(faceDetector.embed({ 
+      expect(() => faceDetector.embed({ 
         source: image, 
         detection: detections[0] 
-      })).rejects.toThrow('Embedding failed');
+      })).toThrow('Embedding failed');
     });
 
     it('should handle corrupted embeddings', () => {
@@ -389,8 +406,8 @@ describe('Face Clustering Integration Tests', () => {
         headName: 'face3'
       };
 
-      const similarity12 = FaceDetector.cosineSimilarity(embedding1 as any, embedding2 as any);
-      const similarity13 = FaceDetector.cosineSimilarity(embedding1 as any, embedding3 as any);
+      const similarity12 = FaceDetector.cosineSimilarity(embedding1, embedding2);
+      const similarity13 = FaceDetector.cosineSimilarity(embedding1, embedding3);
 
       expect(typeof similarity12).toBe('number');
       expect(typeof similarity13).toBe('number');
@@ -403,9 +420,11 @@ describe('Face Clustering Integration Tests', () => {
 
 // Helper function to create mock images
 function createMockImage(filename: string): HTMLImageElement {
-  const img = new Image();
-  img.src = `data:image/jpeg;base64,mock-${filename}`;
-  img.naturalWidth = 640;
-  img.naturalHeight = 480;
+  const img = Object.create(HTMLImageElement.prototype) as HTMLImageElement;
+  Object.defineProperties(img, {
+    naturalWidth: { value: 640, writable: true },
+    naturalHeight: { value: 480, writable: true },
+    src: { value: `data:image/jpeg;base64,mock-${filename}`, writable: true },
+  });
   return img;
 }

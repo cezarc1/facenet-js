@@ -5,7 +5,9 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { FaceDetectionPanel } from './components/FaceDetectionPanel';
 import { GitHubStats } from './components/GitHubStats';
 
-function MediaPipeErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
+function MediaPipeErrorFallback({ error, resetErrorBoundary }: { error: unknown; resetErrorBoundary: () => void }) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+
   return (
     <div className="min-h-screen bg-red-50 flex items-center justify-center p-4">
       <div className="bg-white p-6 rounded-lg shadow-md max-w-md w-full">
@@ -16,7 +18,7 @@ function MediaPipeErrorFallback({ error, resetErrorBoundary }: { error: Error; r
         <details className="mb-4">
           <summary className="text-sm text-gray-500 cursor-pointer">Error Details</summary>
           <pre className="text-xs bg-gray-100 p-2 rounded mt-2 overflow-auto max-h-32">
-            {error.message}
+            {errorMessage}
           </pre>
         </details>
         <button

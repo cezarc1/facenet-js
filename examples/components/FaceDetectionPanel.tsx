@@ -1,8 +1,8 @@
-import { Camera } from '@mediapipe/camera_utils'
 import { Detection, EmbeddingResult, FaceDetectionDevice, FaceDetectionMode } from 'facenet-js'
 import { useFaceDetector } from 'facenet-js/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { FaceHighlight } from './FaceHighlight'
+import { Camera } from '../utils/Camera'
+import { FaceHighlight, FaceHighlightMetrics } from './FaceHighlight'
 import { useImageCapture } from '../hooks/useImageCapture'
 import { ImageCaptureControls } from './ImageCaptureControls'
 
@@ -31,10 +31,35 @@ export const FaceDetectionPanel = ({
   const [embedding, setEmbedding] = useState<EmbeddingResult | null>(null);
   const [processingError, setProcessingError] = useState<Error | null>(null);
   const [isWebcamActive, setIsWebcamActive] = useState(false);
+  const [imageHighlightMetrics, setImageHighlightMetrics] = useState<FaceHighlightMetrics | null>(null);
+  const [videoHighlightMetrics, setVideoHighlightMetrics] = useState<FaceHighlightMetrics | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const cameraRef = useRef<Camera | null>(null);
   const isProcessingRef = useRef(false);
+
+  const getHighlightMetrics = useCallback((
+    element: HTMLImageElement | HTMLVideoElement
+  ): FaceHighlightMetrics => {
+    const isVideoElement = element instanceof HTMLVideoElement;
+    const mediaWidth = isVideoElement ? element.videoWidth : element.naturalWidth;
+    const mediaHeight = isVideoElement ? element.videoHeight : element.naturalHeight;
+    return {
+      containerWidth: element.offsetWidth || element.clientWidth || mediaWidth,
+      containerHeight: element.offsetHeight || element.clientHeight || mediaHeight,
+      mediaWidth,
+      mediaHeight,
+      isVideo: isVideoElement,
+    };
+  }, []);
+
+  const handleImageMetrics = useCallback((element: HTMLImageElement) => {
+    setImageHighlightMetrics(getHighlightMetrics(element));
+  }, [getHighlightMetrics]);
+
+  const handleVideoMetrics = useCallback((element: HTMLVideoElement) => {
+    setVideoHighlightMetrics(getHighlightMetrics(element));
+  }, [getHighlightMetrics]);
 
   useEffect(() => {
     if (onEmbeddingChange && embedding && detection) {
@@ -64,7 +89,7 @@ export const FaceDetectionPanel = ({
         setEmbedding(null);
         throw new Error('No face detected in the uploaded image');
       }
-      const firstDetection = detections[0]!;
+      const firstDetection = detections[0];
       setDetection(firstDetection);
       const embeddingResult = await faceDetector.embed({
         source: imageElement,
@@ -95,7 +120,7 @@ export const FaceDetectionPanel = ({
       const handleLoad = () => {
         // Double-check dimensions are valid
         if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-          detectFromImage(img);
+          void detectFromImage(img);
         } else {
           setProcessingError(new Error('Invalid image dimensions'));
         }
@@ -160,7 +185,7 @@ export const FaceDetectionPanel = ({
     }
     try {
       if (cameraRef.current) {
-        await cameraRef.current.stop();
+        cameraRef.current.stop();
       }
       cameraRef.current = new Camera(videoRef.current, {
         onFrame: async () => {
@@ -183,14 +208,15 @@ export const FaceDetectionPanel = ({
     }
   }, [detectFromVideo]);
 
-  const stopWebcam = useCallback(async () => {
+  const stopWebcam = useCallback(() => {
     if (cameraRef.current) {
       try {
-        await cameraRef.current.stop();
+        cameraRef.current.stop();
         cameraRef.current = null;
         setIsWebcamActive(false);
         setDetection(null);
         setEmbedding(null);
+        setVideoHighlightMetrics(null);
       } catch (error) {
         console.error('Error stopping camera:', error);
       }
@@ -200,7 +226,7 @@ export const FaceDetectionPanel = ({
   useEffect(() => {
     return () => {
       if (cameraRef.current) {
-        cameraRef.current.stop().catch(console.error);
+        cameraRef.current.stop();
         cameraRef.current = null;
       }
     }
@@ -250,11 +276,12 @@ export const FaceDetectionPanel = ({
                   ref={imageRef}
                   src={imageCapture.imageSource}
                   alt="Reference"
+                  onLoad={(event) => handleImageMetrics(event.currentTarget)}
                   className="w-full h-full object-contain"
                 />
-                {detection && <FaceHighlight
+                {detection && imageHighlightMetrics && <FaceHighlight
                   detection={detection}
-                  containerRef={imageRef}
+                  metrics={imageHighlightMetrics}
                 />}
               </div>
               <button
@@ -262,6 +289,7 @@ export const FaceDetectionPanel = ({
                   imageCapture.actions.clearImage();
                   setDetection(null);
                   setEmbedding(null);
+                  setImageHighlightMetrics(null);
                 }}
                 className="w-full py-2 px-4 rounded-lg font-medium transition-colors bg-gray-600 text-white hover:bg-gray-700 shadow-sm text-sm"
               >
@@ -273,7 +301,13 @@ export const FaceDetectionPanel = ({
       ) : (
         <>
           <button
-            onClick={isWebcamActive ? stopWebcam : handleWebcamEnable}
+            onClick={() => {
+              if (isWebcamActive) {
+                stopWebcam();
+                return;
+              }
+              void handleWebcamEnable();
+            }}
             disabled={isDisabled}
             className={`w-full py-3 px-4 rounded-lg font-medium transition-colors mb-4 ${isDisabled
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -289,10 +323,12 @@ export const FaceDetectionPanel = ({
               ref={videoRef}
               autoPlay
               playsInline
+              onLoadedMetadata={(event) => handleVideoMetrics(event.currentTarget)}
+              onResize={(event) => handleVideoMetrics(event.currentTarget)}
               className="w-full h-full transform -scale-x-100" />
-            {detection && <FaceHighlight
+            {detection && videoHighlightMetrics && <FaceHighlight
               detection={detection}
-              containerRef={videoRef}
+              metrics={videoHighlightMetrics}
               isMirrored={true}
             />}
           </div>

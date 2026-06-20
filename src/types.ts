@@ -1,8 +1,8 @@
 import {
-  Detection,
-  Embedding as EmbeddingMediaPipe,
-  FilesetResolver,
-  ImageEmbedderResult,
+  type Detection,
+  type Embedding as EmbeddingMediaPipe,
+  type FilesetResolver,
+  type ImageEmbedderResult,
 } from '@mediapipe/tasks-vision';
 export type { Detection, ImageEmbedderResult } from '@mediapipe/tasks-vision';
 
@@ -14,11 +14,11 @@ export type FaceDetectorState = 'not_initialized' | 'initializing' | 'initialize
 /**
  * Request for embedding a face.
  */
-export type EmbeddingRequest = {
+export interface EmbeddingRequest {
   source: HTMLImageElement | HTMLVideoElement;
   detection: Detection;
   timestamp?: number;
-};
+}
 
 export interface FaceDetectionOptions {
   /** Computation device to use */

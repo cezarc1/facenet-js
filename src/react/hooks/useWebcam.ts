@@ -25,7 +25,7 @@ export const useWebcam = () => {
   const stopWebcam = useCallback(() => {
     if (videoRef.current?.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach(track => { track.stop(); });
       videoRef.current.srcObject = null;
     }
     setIsActive(false);

@@ -10,6 +10,8 @@ Also has helpful React hooks and components.
 
 Code for the demo is in the example folder [here](https://github.com/cezarc1/facenet-js/tree/main/examples).
 
+To run the demo locally from this repo, see [Development](#development).
+
 ## Features
 
 - **Browser-Optimized**: Built specifically for high-performance in-browser execution
@@ -27,6 +29,8 @@ Code for the demo is in the example folder [here](https://github.com/cezarc1/fac
 ```bash
 npm install facenet-js
 ```
+
+The core package installs its pinned MediaPipe Tasks Vision runtime. React is an optional peer used by the `facenet-js/react` entry point; apps that import React providers or hooks should provide React 19 or newer.
 
 or with yarn:
 
@@ -53,11 +57,11 @@ await detector.initialize();
 
 // Detect faces in an image
 const imageElement = document.getElementById('myImage') as HTMLImageElement;
-const detections = detector.detectFromImage(imageElement);
+const detections = await detector.detectFromImage(imageElement);
 
 // Get face embeddings for recognition
 if (detections.length > 0) {
-  const embedding = detector.embed({
+  const embedding = await detector.embed({
     source: imageElement,
     detection: detections[0]
   });
@@ -85,6 +89,10 @@ function App() {
 
 function FaceDetectionComponent() {
   const { faceDetector, isLoading, error } = useFaceDetector();
+
+  if (isLoading || !faceDetector) {
+    return null;
+  }
   
   // The face detector is automatically initialized by the provider
   // Use faceDetector.detectFromImage() or faceDetector.detectFromVideo()
@@ -122,17 +130,19 @@ new FaceDetector(options: FaceDetectionOptions)
 
 Initializes and loads the face detection models into browser memory. Must be called before detection.
 
-##### `detectFromImage(imageElement: HTMLImageElement): Promise<Detection[]>`
+##### `detectFromImage(imageElement: HTMLImageElement): Detection[]`
 
 Detects faces in a static image.
 
-##### `detectFromVideo(videoElement: HTMLVideoElement, timestamp: number): Promise<Detection[]>`
+##### `detectFromVideo(videoElement: HTMLVideoElement, timestamp: number): Detection[]`
 
 Detects faces in a video frame.
 
-##### `embed(request: EmbeddingRequest): Promise<ImageEmbedderResult | null>`
+##### `embed(request: EmbeddingRequest): ImageEmbedderResult | null`
 
 Generates face embeddings for recognition.
+
+> Current inference methods return synchronously because the MediaPipe Tasks Vision APIs do. Examples may still use `await`; this is valid JavaScript and keeps call sites easy to migrate if a future worker-backed backend returns Promises.
 
 **EmbeddingRequest:**
 
@@ -180,7 +190,7 @@ const { faceDetector, isLoading, error } = useFaceDetector();
 
 Returns:
 
-- `faceDetector`: The FaceDetector instance
+- `faceDetector`: The initialized FaceDetector instance, or `null` while loading or after initialization fails
 - `isLoading`: Boolean indicating if models are loading
 - `error`: Error object if initialization failed
 
@@ -307,27 +317,13 @@ async function compareFaces(img1: HTMLImageElement, img2: HTMLImageElement) {
 
   if (embedding1 && embedding2) {
     // Calculate cosine similarity
-    const similarity = cosineSimilarity(
+    const similarity = FaceDetector.cosineSimilarity(
       embedding1.embeddings[0], 
       embedding2.embeddings[0]
     );
     
     console.log(`Face similarity: ${similarity}`);
   }
-}
-
-function cosineSimilarity(a: Float32Array, b: Float32Array): number {
-  let dotProduct = 0;
-  let normA = 0;
-  let normB = 0;
-  
-  for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
-  }
-  
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 ```
 
@@ -400,21 +396,24 @@ FaceNet.js is designed as a browser-first library with excellent cross-browser c
 
 ## Development
 
+To try the framework locally with the example app:
+
 ```bash
-# Install dependencies
-npm install
-
-# Build the library
+nvm install
+npm ci
+npm --prefix examples ci
 npm run build
+npm --prefix examples run dev -- --host 127.0.0.1
+```
 
-# Run in development mode
-npm run dev
+Open the Vite URL printed by the final command. If you already have Node 24 or newer active, you can skip `nvm install`. The example app serves `examples/public/facenet.tflite`, which is already linked to the repo's local `models/facenet.tflite`, so no model copy step is needed.
 
-# Run tests
+Maintainer checks:
+
+```bash
 npm test
-
-# Lint code
 npm run lint
+npm run release:verify
 ```
 
 ## TODO / Roadmap
@@ -431,5 +430,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - [MediaPipe](https://mediapipe.dev/)
-- [TensorFlow.js](https://www.tensorflow.org/js)
 - [FaceNet](https://arxiv.org/abs/1503.03832) (Schroff et al.)

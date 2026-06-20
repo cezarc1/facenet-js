@@ -1,6 +1,13 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
+const externalDependencies = [
+  '@mediapipe/tasks-vision',
+  'react',
+  'react/jsx-runtime',
+  'react/jsx-dev-runtime',
+];
+
 export default defineConfig({
   build: {
     lib: {
@@ -12,12 +19,13 @@ export default defineConfig({
       formats: ['cjs'],
     },
     rollupOptions: {
-      external: ['@mediapipe/tasks-vision', '@tensorflow/tfjs', 'react'],
+      external: externalDependencies,
       output: {
         globals: {
           '@mediapipe/tasks-vision': 'MediaPipeTasksVision',
-          '@tensorflow/tfjs': 'tf',
-          'react': 'React'
+          'react': 'React',
+          'react/jsx-runtime': 'ReactJSXRuntime',
+          'react/jsx-dev-runtime': 'ReactJSXDevRuntime'
         }
       }
     },

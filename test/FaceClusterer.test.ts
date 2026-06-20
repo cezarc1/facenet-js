@@ -4,27 +4,48 @@ import type { ClusteringOptions, EmbeddingResult } from '../src/types';
 
 // Mock the clustering libraries
 vi.mock('density-clustering', () => ({
-  DBSCAN: vi.fn().mockImplementation(() => ({
-    run: vi.fn().mockReturnValue([[0, 1], [2, 3]]) // Two clusters
-  })),
-  OPTICS: vi.fn().mockImplementation(() => ({
-    run: vi.fn().mockReturnValue([[0, 1], [2]])
-  })),
-  KMEANS: vi.fn().mockImplementation(() => ({
-    run: vi.fn().mockReturnValue([[0, 2], [1, 3]])
-  }))
+  DBSCAN: vi.fn().mockImplementation(function () {
+    return {
+      run: vi.fn().mockImplementation((dataset) => {
+        if (dataset.length >= 4) {
+          return [[0, 1], [2, 3]];
+        }
+        if (dataset.length >= 2) {
+          return [[0, 1]];
+        }
+        return dataset.length === 1 ? [[0]] : [];
+      }),
+    };
+  }),
+  OPTICS: vi.fn().mockImplementation(function () {
+    return {
+      run: vi.fn().mockImplementation((dataset) => {
+        if (dataset.length >= 2) {
+          return [[0, 1]];
+        }
+        return dataset.length === 1 ? [[0]] : [];
+      }),
+    };
+  }),
+  KMEANS: vi.fn().mockImplementation(function () {
+    return {
+      run: vi.fn().mockImplementation((dataset) => {
+        if (dataset.length >= 4) {
+          return [[0, 2], [1, 3]];
+        }
+        if (dataset.length >= 2) {
+          return [[0, 1]];
+        }
+        return dataset.length === 1 ? [[0]] : [];
+      }),
+    };
+  })
 }));
 
 vi.mock('ml-hclust', () => ({
   agnes: vi.fn().mockReturnValue({
     cut: vi.fn().mockReturnValue([0, 0, 1, 1]) // Hierarchical result
   })
-}));
-
-vi.mock('ml-distance', () => ({
-  similarity: {
-    cosine: vi.fn().mockReturnValue(0.8) // High similarity
-  }
 }));
 
 // Helper function to create mock embeddings
@@ -85,7 +106,7 @@ describe('FaceClusterer', () => {
 
     it('should throw error for embeddings without valid vectors', () => {
       const invalidEmbeddings = [{ embeddings: [] }] as EmbeddingResult[];
-      expect(() => clusterer.cluster(invalidEmbeddings)).toThrow('embeddings  to cluster must be >0');
+      expect(() => clusterer.cluster(invalidEmbeddings)).toThrow('No valid embedding vectors found');
     });
 
     it('should successfully cluster valid embeddings with DBSCAN', () => {
@@ -334,12 +355,25 @@ describe('FaceClusterer', () => {
         createMockEmbedding([1, 0, 0, NaN])
       ];
       
-      // Should not crash
-      expect(() => clusterer.cluster(nanEmbeddings)).not.toThrow();
+      expect(() => clusterer.cluster(nanEmbeddings)).toThrow('No valid embedding vectors found');
+    });
+
+    it('should preserve original indices when filtering invalid embeddings', () => {
+      const mixedEmbeddings = [
+        createMockEmbedding([NaN, 0, 0, 1]),
+        createMockEmbedding([1, 0, 0, 1]),
+        createMockEmbedding([1, 0, 0, 0.9])
+      ];
+
+      const result = clusterer.cluster(mixedEmbeddings);
+
+      expect(result.totalEmbeddings).toBe(3);
+      expect(result.clusters[0].memberIndices).toEqual([1, 2]);
+      expect(result.outliers).toEqual([0]);
     });
 
     it('should handle very large embedding arrays', () => {
-      const largeEmbeddings = Array.from({ length: 50 }, (_, i) => 
+      const largeEmbeddings = Array.from({ length: 50 }, () => 
         createMockEmbedding([Math.random(), Math.random(), Math.random(), Math.random()])
       );
       

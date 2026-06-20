@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/index.ts",
+    "src/react/index.ts",
+    "vite.config.ts",
+    "vite.config.cjs.ts",
+    "vitest.config.ts",
+    "test/**/*.test.ts",
+    "test/**/*.test.tsx",
+    "scripts/**/*.mjs"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "test/**/*.{ts,tsx}",
+    "scripts/**/*.mjs",
+    "vite.config*.ts",
+    "vitest.config.ts"
+  ],
+  "ignore": ["dist/**", "examples/**"],
+  "ignoreDependencies": ["@types/node", "prettier"]
+}
