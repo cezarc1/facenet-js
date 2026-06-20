@@ -10,6 +10,8 @@ Also has helpful React hooks and components.
 
 Code for the demo is in the example folder [here](https://github.com/cezarc1/facenet-js/tree/main/examples).
 
+To run the demo locally from this repo, see [Development](#development).
+
 ## Features
 
 - **Browser-Optimized**: Built specifically for high-performance in-browser execution
