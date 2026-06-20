@@ -54,11 +54,11 @@ await detector.initialize();
 
 // Detect faces in an image
 const imageElement = document.getElementById('myImage') as HTMLImageElement;
-const detections = detector.detectFromImage(imageElement);
+const detections = await detector.detectFromImage(imageElement);
 
 // Get face embeddings for recognition
 if (detections.length > 0) {
-  const embedding = detector.embed({
+  const embedding = await detector.embed({
     source: imageElement,
     detection: detections[0]
   });
@@ -125,15 +125,17 @@ Initializes and loads the face detection models into browser memory. Must be cal
 
 ##### `detectFromImage(imageElement: HTMLImageElement): Detection[]`
 
-Detects faces in a static image. This is synchronous after initialization.
+Detects faces in a static image.
 
 ##### `detectFromVideo(videoElement: HTMLVideoElement, timestamp: number): Detection[]`
 
-Detects faces in a video frame. This is synchronous after initialization.
+Detects faces in a video frame.
 
 ##### `embed(request: EmbeddingRequest): ImageEmbedderResult | null`
 
-Generates face embeddings for recognition. This is synchronous after initialization.
+Generates face embeddings for recognition.
+
+> Current inference methods return synchronously because the MediaPipe Tasks Vision APIs do. Examples may still use `await`; this is valid JavaScript and keeps call sites easy to migrate if a future worker-backed backend returns Promises.
 
 **EmbeddingRequest:**
 
@@ -225,7 +227,7 @@ async function detectFaces() {
   await detector.initialize();
 
   const img = document.querySelector('#photo') as HTMLImageElement;
-  const faces = detector.detectFromImage(img);
+  const faces = await detector.detectFromImage(img);
 
   console.log(`Found ${faces.length} faces`);
   
@@ -256,8 +258,8 @@ async function startVideoDetection() {
   const video = document.querySelector('#webcam') as HTMLVideoElement;
   
   // Detection loop
-  function detect() {
-    const faces = detector.detectFromVideo(video, performance.now());
+  async function detect() {
+    const faces = await detector.detectFromVideo(video, performance.now());
     
     // Process detected faces
     faces.forEach(face => {
@@ -287,8 +289,8 @@ async function compareFaces(img1: HTMLImageElement, img2: HTMLImageElement) {
   await detector.initialize();
 
   // Detect faces in both images
-  const faces1 = detector.detectFromImage(img1);
-  const faces2 = detector.detectFromImage(img2);
+  const faces1 = await detector.detectFromImage(img1);
+  const faces2 = await detector.detectFromImage(img2);
 
   if (faces1.length === 0 || faces2.length === 0) {
     console.log('No faces detected');
@@ -296,12 +298,12 @@ async function compareFaces(img1: HTMLImageElement, img2: HTMLImageElement) {
   }
 
   // Get embeddings
-  const embedding1 = detector.embed({
+  const embedding1 = await detector.embed({
     source: img1,
     detection: faces1[0]
   });
 
-  const embedding2 = detector.embed({
+  const embedding2 = await detector.embed({
     source: img2,
     detection: faces2[0]
   });

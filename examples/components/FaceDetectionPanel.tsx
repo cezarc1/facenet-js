@@ -82,7 +82,7 @@ export const FaceDetectionPanel = ({
 
     try {
       setProcessingError(null);
-      const detections = faceDetector.detectFromImage(imageElement);
+      const detections = await faceDetector.detectFromImage(imageElement);
 
       if (detections.length === 0) {
         setDetection(null);
@@ -91,7 +91,7 @@ export const FaceDetectionPanel = ({
       }
       const firstDetection = detections[0]!;
       setDetection(firstDetection);
-      const embeddingResult = faceDetector.embed({
+      const embeddingResult = await faceDetector.embed({
         source: imageElement,
         detection: firstDetection
       });
@@ -152,14 +152,14 @@ export const FaceDetectionPanel = ({
 
     isProcessingRef.current = true;
     try {
-      const detections = faceDetector.detectFromVideo(videoElement, timestamp);
+      const detections = await faceDetector.detectFromVideo(videoElement, timestamp);
       if (detections.length === 0) {
         setDetection(null);
         return;
       }
       const firstDetection = detections[0];
       setDetection(firstDetection);
-      const embeddingResult = faceDetector.embed({
+      const embeddingResult = await faceDetector.embed({
         source: videoElement,
         detection: firstDetection,
         timestamp
