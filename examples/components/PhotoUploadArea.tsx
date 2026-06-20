@@ -1,5 +1,6 @@
-import { FaceSource } from 'facenet-js/react';
+import type { FaceSource } from 'facenet-js/react';
 import { useCallback, useRef, useState } from 'react';
+import type { ChangeEvent, DragEvent } from 'react';
 
 interface PhotoUploadAreaProps {
   onPhotosUpload: (photos: FaceSource[]) => void;
@@ -73,30 +74,30 @@ export const PhotoUploadArea = ({ onPhotosUpload, onError, disabled = false }: P
     }
   }, [disabled, onPhotosUpload, onError]);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: DragEvent) => {
     e.preventDefault();
     if (!disabled) {
       setIsDragging(true);
     }
   }, [disabled]);
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
+  const handleDragLeave = useCallback((e: DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback((e: DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
 
     if (!disabled && e.dataTransfer.files) {
-      handleFiles(e.dataTransfer.files);
+      void handleFiles(e.dataTransfer.files);
     }
   }, [disabled, handleFiles]);
 
-  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInput = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     if (!disabled && e.target.files) {
-      handleFiles(e.target.files);
+      void handleFiles(e.target.files);
     }
   }, [disabled, handleFiles]);
 

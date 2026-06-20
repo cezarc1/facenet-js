@@ -11,11 +11,11 @@ import type { FaceDetectionOptions } from '../../src/types';
 const faceDetectorMocks = vi.hoisted(() => ({
   constructor: vi.fn(),
   initializeResults: [] as Promise<void>[],
-  instances: [] as Array<{
+  instances: [] as {
     initialize: ReturnType<typeof vi.fn>;
     close: ReturnType<typeof vi.fn>;
     options: FaceDetectionOptions;
-  }>,
+  }[],
 }));
 
 vi.mock('../../src/FaceDetector', () => ({
@@ -108,7 +108,7 @@ describe('FaceDetectorProvider wrappers', () => {
   });
 
   it('exposes null while initialization is pending and detector after success', async () => {
-    const states: Array<ReturnType<typeof useFaceDetector>> = [];
+    const states: ReturnType<typeof useFaceDetector>[] = [];
     const pendingInitialize = createDeferred();
     faceDetectorMocks.initializeResults.push(pendingInitialize.promise);
 

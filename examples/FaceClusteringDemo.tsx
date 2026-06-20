@@ -75,7 +75,7 @@ const FaceClusteringDemoInner = () => {
   }, []);
 
   const handleClusteringOptionsChange = useCallback((newOptions: ClusteringOptions) => {
-    setClusteringOptions({ ...DEFAULT_OPTIONS, ...newOptions } as Required<ClusteringOptions>);
+    setClusteringOptions({ ...DEFAULT_OPTIONS, ...newOptions });
   }, []);
 
   const handleClusterTag = useCallback((clusterId: string, tag: string) => {

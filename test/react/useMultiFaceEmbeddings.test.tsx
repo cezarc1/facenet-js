@@ -18,13 +18,13 @@ vi.mock('../../src/react/hooks/useFaceDetection', () => ({
 }));
 
 // Helper functions
-const createMockImage = (src: string = 'mock-image.jpg'): HTMLImageElement => {
+const createMockImage = (src = 'mock-image.jpg'): HTMLImageElement => {
   const img = new Image();
   img.src = src;
   return img;
 };
 
-const createMockDetection = (score: number = 0.9): Detection => ({
+const createMockDetection = (score = 0.9): Detection => ({
   categories: [{ score, index: 0, categoryName: 'face', displayName: 'Face' }],
   boundingBox: { originX: 0, originY: 0, width: 100, height: 100 }
 });

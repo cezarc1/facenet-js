@@ -41,7 +41,7 @@ export class Camera {
     this.scheduleNextFrame();
   }
 
-  async stop() {
+  stop() {
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;

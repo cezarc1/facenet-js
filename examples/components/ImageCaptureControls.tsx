@@ -1,19 +1,19 @@
-import React from 'react';
-import { UseImageCaptureReturn } from '../hooks/useImageCapture';
+import type { ChangeEvent, FC } from 'react';
+import type { UseImageCaptureReturn } from '../hooks/useImageCapture';
 
 interface ImageCaptureControlsProps {
   imageCapture: UseImageCaptureReturn;
   className?: string;
 }
 
-export const ImageCaptureControls: React.FC<ImageCaptureControlsProps> = ({ 
+export const ImageCaptureControls: FC<ImageCaptureControlsProps> = ({
   imageCapture, 
   className = '' 
 }) => {
   const { imageSource, captureState, isProcessing, error, actions, refs, isMobile, facingMode } = imageCapture;
   const { canvasRef, fileInputRef, videoRef } = refs;
   
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       actions.uploadImage(file);
@@ -44,7 +44,9 @@ export const ImageCaptureControls: React.FC<ImageCaptureControlsProps> = ({
           </button>
           
           <button
-            onClick={actions.startCamera}
+            onClick={() => {
+              void actions.startCamera();
+            }}
             disabled={isProcessing}
             className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700 shadow-sm disabled:bg-gray-300 disabled:text-gray-500"
           >
@@ -83,7 +85,9 @@ export const ImageCaptureControls: React.FC<ImageCaptureControlsProps> = ({
             />
             {isMobile && (
               <button
-                onClick={actions.switchCamera}
+                onClick={() => {
+                  void actions.switchCamera();
+                }}
                 className="absolute top-2 right-2 p-2 bg-white bg-opacity-80 rounded-full shadow-md hover:bg-opacity-100 transition-all"
                 title={`Switch to ${facingMode === 'user' ? 'back' : 'front'} camera`}
               >

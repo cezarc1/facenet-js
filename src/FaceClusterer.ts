@@ -1,32 +1,37 @@
 import { DBSCAN, KMEANS, OPTICS } from 'density-clustering';
 import { agnes } from 'ml-hclust';
-import { Embedding, EmbeddingResult } from './types';
+import { type Embedding, type EmbeddingResult } from './types';
 
 export type ClusteringAlgorithm = 'DBSCAN' | 'HIERARCHICAL' | 'KMEANS' | 'OPTICS';
 
 
 export interface ClusteringOptions {
-  /** The clustering algorithm to use.
+  /**
+   * The clustering algorithm to use.
    * Default: 'DBSCAN'
    */
   algorithm?: ClusteringAlgorithm;
 
-  /** Similarity threshold (0-1). Higher values require more similarity to cluster together.
+  /**
+   * Similarity threshold (0-1). Higher values require more similarity to cluster together.
    * Default: 0.6
    */
   threshold?: number;
 
-  /** Minimum number of points required to form a cluster (DBSCAN/OPTICS).
+  /**
+   * Minimum number of points required to form a cluster (DBSCAN/OPTICS).
    * Default: 2
    */
   minSamples?: number;
 
-  /** Maximum number of clusters to create (KMEANS).
+  /**
+   * Maximum number of clusters to create (KMEANS).
    * Default: 100
    */
   maxClusters?: number;
 
-  /** Distance metric to use.
+  /**
+   * Distance metric to use.
    * Default: 'cosine'
    */
   distanceMetric?: 'cosine' | 'euclidean';
@@ -74,7 +79,6 @@ interface IndexedEmbeddingVector {
 /**
  * A class for clustering face embeddings to group similar faces together.
  * This clustering happens on the CPU.
- *
  * @example
  * ```ts
  * const clusterer = new FaceClusterer({
@@ -100,7 +104,7 @@ export class FaceClusterer {
     this.options = {
       ...DEFAULT_OPTIONS,
       ...options,
-    } as Required<ClusteringOptions>;
+    };
     if (this.options.algorithm === 'DBSCAN') {
       this.dbscan = new DBSCAN();
     } else if (this.options.algorithm === 'OPTICS') {
@@ -112,7 +116,6 @@ export class FaceClusterer {
 
   /**
    * Clusters an array of face embeddings using the configured algorithm.
-   *
    * @param embeddings - Array of face embedding results to cluster
    * @returns Clustering result with both clusters and outliers
    */
@@ -239,7 +242,8 @@ export class FaceClusterer {
     return matrix;
   }
 
-  /** https://en.wikipedia.org/wiki/Cosine_similarity.
+  /**
+   * https://en.wikipedia.org/wiki/Cosine_similarity.
    *  Note that the distance is 1 - cosine similarity.
    */
   private static cosineDistance(a: number[], b: number[]): number {
@@ -419,7 +423,7 @@ export class FaceClusterer {
         }
       }
 
-      mergedMap.set(labelA, Array.from(mergedIndices) as number[]);
+      mergedMap.set(labelA, Array.from(mergedIndices));
     }
 
     return mergedMap;
@@ -440,7 +444,7 @@ export class FaceClusterer {
         floatEmbedding: Array.from(centroid),
         headIndex: 0,
         headName: 'face_cluster',
-      } as unknown as Embedding,
+      },
       confidence,
       size: originalMemberIndices.length,
     };
@@ -493,7 +497,7 @@ export class FaceClusterer {
     for (const index of memberIndices) {
       const vector = embeddingVectors[index]!;
       if (vector) {
-        const vectorArray = Array.from(vector!);
+        const vectorArray = Array.from(vector);
         const sim = FaceClusterer.cosineSimilarity(vectorArray, centroidArray);
         if (!isNaN(sim) && isFinite(sim)) {
           totalSimilarity += sim;

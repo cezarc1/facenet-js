@@ -89,7 +89,7 @@ export const FaceDetectionPanel = ({
         setEmbedding(null);
         throw new Error('No face detected in the uploaded image');
       }
-      const firstDetection = detections[0]!;
+      const firstDetection = detections[0];
       setDetection(firstDetection);
       const embeddingResult = await faceDetector.embed({
         source: imageElement,
@@ -120,7 +120,7 @@ export const FaceDetectionPanel = ({
       const handleLoad = () => {
         // Double-check dimensions are valid
         if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-          detectFromImage(img);
+          void detectFromImage(img);
         } else {
           setProcessingError(new Error('Invalid image dimensions'));
         }
@@ -185,7 +185,7 @@ export const FaceDetectionPanel = ({
     }
     try {
       if (cameraRef.current) {
-        await cameraRef.current.stop();
+        cameraRef.current.stop();
       }
       cameraRef.current = new Camera(videoRef.current, {
         onFrame: async () => {
@@ -208,10 +208,10 @@ export const FaceDetectionPanel = ({
     }
   }, [detectFromVideo]);
 
-  const stopWebcam = useCallback(async () => {
+  const stopWebcam = useCallback(() => {
     if (cameraRef.current) {
       try {
-        await cameraRef.current.stop();
+        cameraRef.current.stop();
         cameraRef.current = null;
         setIsWebcamActive(false);
         setDetection(null);
@@ -226,7 +226,7 @@ export const FaceDetectionPanel = ({
   useEffect(() => {
     return () => {
       if (cameraRef.current) {
-        cameraRef.current.stop().catch(console.error);
+        cameraRef.current.stop();
         cameraRef.current = null;
       }
     }
@@ -301,7 +301,13 @@ export const FaceDetectionPanel = ({
       ) : (
         <>
           <button
-            onClick={isWebcamActive ? stopWebcam : handleWebcamEnable}
+            onClick={() => {
+              if (isWebcamActive) {
+                stopWebcam();
+                return;
+              }
+              void handleWebcamEnable();
+            }}
             disabled={isDisabled}
             className={`w-full py-3 px-4 rounded-lg font-medium transition-colors mb-4 ${isDisabled
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'

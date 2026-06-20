@@ -205,7 +205,7 @@ describe('useFaceClustering', () => {
       createMockEmbedding([0, 1, 1, 0])
     ];
 
-    const algorithms: Array<ClusteringOptions['algorithm']> = [
+    const algorithms: ClusteringOptions['algorithm'][] = [
       'DBSCAN', 'HIERARCHICAL', 'KMEANS', 'OPTICS'
     ];
 

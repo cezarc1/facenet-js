@@ -2,18 +2,16 @@ import { useMemo } from 'react';
 import {
   DEFAULT_OPTIONS,
   FaceClusterer,
-  ClusteringOptions,
-  ClusterResult,
+  type ClusteringOptions,
+  type ClusterResult,
 } from '../../FaceClusterer';
-import { Embedding, EmbeddingResult } from '../../types';
+import { type Embedding, type EmbeddingResult } from '../../types';
 
 /**
  * React hook for clustering face embeddings.
- *
  * @param embeddings - Array of face embeddings to cluster
  * @param options - Clustering configuration options
  * @returns Clustering result or null if no valid embeddings
- *
  * @example
  * ```tsx
  * const { clusters, isLoading, error } = useFaceClustering(embeddings, {

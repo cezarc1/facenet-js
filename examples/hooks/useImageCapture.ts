@@ -93,12 +93,12 @@ export const useImageCapture = (options: UseImageCaptureOptions = {}): UseImageC
       
       // Stop any existing camera
       if (cameraRef.current) {
-        await cameraRef.current.stop();
+        cameraRef.current.stop();
       }
       
       // Initialize new camera
       cameraRef.current = new Camera(videoRef.current, {
-        onFrame: async () => {
+        onFrame: () => {
           // Camera is running, no need to process frames here
         },
         facingMode,
@@ -116,7 +116,7 @@ export const useImageCapture = (options: UseImageCaptureOptions = {}): UseImageC
   
   const stopCamera = useCallback(() => {
     if (cameraRef.current) {
-      cameraRef.current.stop().catch(console.error);
+      cameraRef.current.stop();
       cameraRef.current = null;
     }
   }, []);
@@ -187,9 +187,9 @@ export const useImageCapture = (options: UseImageCaptureOptions = {}): UseImageC
     // If camera is active, restart with new facing mode
     if (captureState === 'camera-preview' && videoRef.current && cameraRef.current) {
       try {
-        await cameraRef.current.stop();
+        cameraRef.current.stop();
         cameraRef.current = new Camera(videoRef.current, {
-          onFrame: async () => {
+          onFrame: () => {
             // Camera is running, no need to process frames here
           },
           facingMode: newMode,

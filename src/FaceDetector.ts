@@ -1,26 +1,25 @@
 import {
-  Detection,
+  type Detection,
   FaceDetector as FaceDetectorMediaPipe,
   FilesetResolver,
   ImageEmbedder,
 } from '@mediapipe/tasks-vision';
 import {
-  Embedding,
-  EmbeddingRequest,
-  EmbeddingResult,
-  FaceDetection,
-  FaceDetectionOptions,
-  FaceDetectorState,
+  type Embedding,
+  type EmbeddingRequest,
+  type EmbeddingResult,
+  type FaceDetection,
+  type FaceDetectionOptions,
+  type FaceDetectorState,
 } from './types';
 
 const DEFAULT_DETECTION_MODEL =
   'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
-export const MEDIAPIPE_TASKS_VISION_VERSION = '0.10.35';
-export const DEFAULT_WASM_PATH = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_TASKS_VISION_VERSION}/wasm`;
+const MEDIAPIPE_TASKS_VISION_VERSION = '0.10.35';
+const DEFAULT_WASM_PATH = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_TASKS_VISION_VERSION}/wasm`;
 
 /**
  * A class for detecting and embedding faces.
- *
  * @example
  * ```ts
  * const faceDetector = new FaceDetector({
@@ -76,20 +75,14 @@ export class FaceDetector {
     const lifecycleId = this.lifecycleId;
     const initializationPromise = this.initializeTasks(lifecycleId);
     this.initializationPromise = initializationPromise;
-    initializationPromise.then(
-      () => {
-        if (this.initializationPromise === initializationPromise) {
-          this.initializationPromise = null;
-        }
-      },
-      () => {
-        if (this.initializationPromise === initializationPromise) {
-          this.initializationPromise = null;
-        }
-      }
-    );
 
-    return initializationPromise;
+    try {
+      await initializationPromise;
+    } finally {
+      if (this.initializationPromise === initializationPromise) {
+        this.initializationPromise = null;
+      }
+    }
   }
 
   private async initializeTasks(lifecycleId: number) {
@@ -176,7 +169,6 @@ export class FaceDetector {
 
   /**
    * Detects faces from an image element.
-   *
    * @example
    * ```ts
    * const detections = faceDetector.detectFromImage(imageElement);
@@ -198,7 +190,6 @@ export class FaceDetector {
 
   /**
    * Detects faces from a video element.
-   *
    * @example
    * ```ts
    * const detections = faceDetector.detectFromVideo(videoElement, timestamp);
@@ -259,7 +250,6 @@ export class FaceDetector {
   /**
    * Embeds a detected face into a tensor.
    * The resulting tensor can be then compared to other embeddings using cosine similarity or other distance metrics.
-   *
    * @example
    * ```ts
    * const result = imageFaceDetector.embed({
@@ -332,7 +322,6 @@ export class FaceDetector {
   /**
    * Computes the cosine similarity between two embeddings.
    * The cosine similarity score is between -1 and 1, where 1 means the embeddings are identical, and -1 means they are completely different.
-   *
    * @example
    * ```ts
    * const similarity = FaceDetector.cosineSimilarity(faceEmbedding1, faceEmbedding2);

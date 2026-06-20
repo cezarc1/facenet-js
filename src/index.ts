@@ -11,6 +11,7 @@ export type {
   FaceDetectionOptions,
   FaceDetectorState,
   FaceSimilarityResult,
+  ImageEmbedderResult,
   WasmFileset,
   ClusteringAlgorithm,
   ClusteringOptions,

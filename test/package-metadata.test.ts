@@ -2,12 +2,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-type PackageJson = {
+interface PackageJson {
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
   peerDependenciesMeta?: Record<string, { optional?: boolean }>;
   scripts?: Record<string, string>;
-};
+}
 
 describe('package metadata', () => {
   const packageJson = JSON.parse(
@@ -50,7 +50,11 @@ describe('package metadata', () => {
 
   it('defines an explicit release verification script instead of publish hooks', () => {
     expect(packageJson.scripts?.['release:verify']).toBe(
-      'npm run build && node scripts/verify-pack.mjs'
+      'npm run build && npm run lint:package && npm run lint:types'
     );
+    expect(packageJson.scripts?.['lint:package']).toBe(
+      'publint && node scripts/verify-pack.mjs'
+    );
+    expect(packageJson.scripts?.['lint:types']).toBe('attw --pack .');
   });
 });

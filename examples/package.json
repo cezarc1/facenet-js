@@ -41,5 +41,13 @@
     "lint": "eslint .",
     "preview": "npm run build && vite preview"
   },
-  "type": "module"
+  "type": "module",
+  "browserslist": {
+    "modern": [
+      "Chrome >= 121",
+      "Edge >= 121",
+      "Firefox >= 121",
+      "Safari >= 17.4"
+    ]
+  }
 }

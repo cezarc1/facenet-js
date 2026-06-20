@@ -188,7 +188,7 @@ describe('Face Clustering Integration Tests', () => {
       const imageWithNoFaces = createMockImage('landscape.jpg');
       
       // Mock no detections for this test
-      const mockDetector = vi.mocked(faceDetector['faceDetector']);
+      const mockDetector = vi.mocked(faceDetector.faceDetector);
       if (mockDetector) {
         mockDetector.detect = vi.fn().mockReturnValueOnce({ detections: [] });
       }
@@ -250,7 +250,7 @@ describe('Face Clustering Integration Tests', () => {
     });
 
     it('should compare different clustering algorithms', () => {
-      const algorithms: Array<ClusteringOptions['algorithm']> = ['DBSCAN', 'HIERARCHICAL', 'KMEANS'];
+      const algorithms: ClusteringOptions['algorithm'][] = ['DBSCAN', 'HIERARCHICAL', 'KMEANS'];
       const results = algorithms.map(algorithm => {
         const clusterer = new FaceClusterer({ algorithm, threshold: 0.7 });
         return clusterer.cluster(testEmbeddings);
@@ -315,7 +315,7 @@ describe('Face Clustering Integration Tests', () => {
       const image = createMockImage('single-face.jpg');
       
       // Mock single detection
-      const mockDetector = vi.mocked(faceDetector['faceDetector']);
+      const mockDetector = vi.mocked(faceDetector.faceDetector);
       if (mockDetector) {
         mockDetector.detect = vi.fn().mockReturnValueOnce({
           detections: [{
@@ -346,7 +346,7 @@ describe('Face Clustering Integration Tests', () => {
       const image = createMockImage('problematic.jpg');
       
       // Mock detection failure
-      const mockDetector = vi.mocked(faceDetector['faceDetector']);
+      const mockDetector = vi.mocked(faceDetector.faceDetector);
       if (mockDetector) {
         mockDetector.detect = vi.fn().mockImplementationOnce(() => {
           throw new Error('Detection failed');
@@ -361,7 +361,7 @@ describe('Face Clustering Integration Tests', () => {
       const detections = faceDetector.detectFromImage(image);
       
       // Mock embedding failure
-      const mockEmbedder = vi.mocked(faceDetector['faceEmbedder']);
+      const mockEmbedder = vi.mocked(faceDetector.faceEmbedder);
       if (mockEmbedder) {
         mockEmbedder.embed = vi.fn().mockImplementationOnce(() => {
           throw new Error('Embedding failed');
@@ -406,8 +406,8 @@ describe('Face Clustering Integration Tests', () => {
         headName: 'face3'
       };
 
-      const similarity12 = FaceDetector.cosineSimilarity(embedding1 as any, embedding2 as any);
-      const similarity13 = FaceDetector.cosineSimilarity(embedding1 as any, embedding3 as any);
+      const similarity12 = FaceDetector.cosineSimilarity(embedding1, embedding2);
+      const similarity13 = FaceDetector.cosineSimilarity(embedding1, embedding3);
 
       expect(typeof similarity12).toBe('number');
       expect(typeof similarity13).toBe('number');

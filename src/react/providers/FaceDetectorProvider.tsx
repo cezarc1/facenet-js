@@ -1,7 +1,7 @@
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { FaceDetector } from '../../FaceDetector';
-import { FaceDetectionOptions } from '../../types';
-import { FaceDetectorContext, FaceDetectorContextType } from './FaceDetectorContext';
+import { type FaceDetectionOptions } from '../../types';
+import { FaceDetectorContext, type FaceDetectorContextType } from './FaceDetectorContext';
 
 export interface FaceDetectorProviderProps {
   children: ReactNode;
@@ -105,7 +105,7 @@ export const FaceDetectorProvider = ({ children, options }: FaceDetectorProvider
 
     return () => {
       isActive = false;
-      void initializePromise.then(closeDetector, closeDetector);
+      void initializePromise.finally(closeDetector);
     };
   }, [faceDetectorOptions, optionsKey]);
 

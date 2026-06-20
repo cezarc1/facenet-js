@@ -1,5 +1,5 @@
-import React from 'react'
-import { Detection } from '@mediapipe/tasks-vision'
+import { Fragment } from 'react'
+import type { Detection } from '@mediapipe/tasks-vision'
 
 export interface FaceHighlightMetrics {
   containerWidth: number
@@ -42,7 +42,7 @@ export const FaceHighlight = ({
   const left = isVideo && isMirrored ? containerWidth - scaledLeft - scaledWidth : scaledLeft;
 
   return (
-    <React.Fragment key={0}>
+    <Fragment key={0}>
       <div
         className="absolute border-2 border-green-400 bg-opacity-25 z-[1]"
         style={{
@@ -72,6 +72,6 @@ export const FaceHighlight = ({
           }}
         />
       ))}
-    </React.Fragment>
+    </Fragment>
   )
 } 

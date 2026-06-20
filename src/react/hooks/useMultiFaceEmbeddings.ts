@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useFaceDetector } from './useFaceDetection';
-import { Detection, EmbeddingResult } from '../../types';
+import { type Detection, type EmbeddingResult } from '../../types';
 
 export interface FaceSource {
   /** The image element containing faces */
@@ -32,10 +32,8 @@ const nextTask = () => new Promise<void>(resolve => setTimeout(resolve, 0));
 /**
  * React hook for generating embeddings from multiple face sources.
  * Automatically detects faces and generates embeddings for each detected face.
- *
  * @param sources - Array of image sources to process
  * @returns Object containing embeddings, loading state, and any errors
- *
  * @example
  * ```tsx
  * const sources = [

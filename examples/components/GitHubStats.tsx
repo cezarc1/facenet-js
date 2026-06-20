@@ -12,6 +12,19 @@ interface GitHubData {
   default_branch: string;
 }
 
+function isGitHubData(value: unknown): value is GitHubData {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.stargazers_count === 'number' &&
+    typeof record.forks_count === 'number' &&
+    typeof record.default_branch === 'string'
+  );
+}
+
 export function GitHubStats({ owner, repo, className = '' }: GitHubStatsProps) {
   const [data, setData] = useState<GitHubData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,7 +37,10 @@ export function GitHubStats({ owner, repo, className = '' }: GitHubStatsProps) {
         if (!response.ok) {
           throw new Error('Failed to fetch repository data');
         }
-        const repoData = await response.json();
+        const repoData: unknown = await response.json();
+        if (!isGitHubData(repoData)) {
+          throw new Error('GitHub returned unexpected repository data');
+        }
         setData(repoData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load GitHub data');
@@ -33,7 +49,7 @@ export function GitHubStats({ owner, repo, className = '' }: GitHubStatsProps) {
       }
     };
 
-    fetchGitHubData();
+    void fetchGitHubData();
   }, [owner, repo]);
 
   const formatCount = (count: number): string => {
@@ -111,4 +127,4 @@ export function GitHubStats({ owner, repo, className = '' }: GitHubStatsProps) {
       </div>
     </a>
   );
-} 
+}
