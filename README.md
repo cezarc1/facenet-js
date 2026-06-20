@@ -8,8 +8,6 @@ Also has helpful React hooks and components.
 
 [FaceNet.js Demo](https://cezarc1.github.io/facenet-js/)
 
-A mirror is also available at [cezarcocu.com/facenet-js-demo](https://cezarcocu.com/facenet-js-demo/).
-
 Code for the demo is in the example folder [here](https://github.com/cezarc1/facenet-js/tree/main/examples).
 
 To run the demo locally from this repo, see [Development](#development).
