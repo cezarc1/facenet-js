@@ -192,7 +192,7 @@ describe('useMultiFaceEmbeddings', () => {
     const { result } = renderHook(() => useMultiFaceEmbeddings(sources));
 
     await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
+      expect(result.current.progress.current).toBe(3);
     });
 
     // Should end with 100% progress

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved React to a peer dependency to avoid duplicate React runtimes in host apps.
 - Updated MediaPipe Tasks Vision to the pinned `0.10.35` web runtime.
 - Fixed React hook/provider behavior for clustering and detector option changes.
+- Removed unused TensorFlow.js and `ml-distance` runtime dependencies and package lifecycle scripts.
 
 ## [0.1.0] - 2024-01-XX
 

@@ -1,12 +1,11 @@
 {
   "name": "facenet-js-example",
-  "description": "FaceNet.js is a library for face detection and recognition using TensorFlow.js and MediaPipe.",
+  "description": "FaceNet.js is a library for face detection and recognition using MediaPipe.",
   "version": "0.0.0",
   "dependencies": {
     "@mediapipe/camera_utils": "^0.3.1675466862",
     "@mediapipe/tasks-vision": "0.10.35",
     "@tailwindcss/vite": "^4.1.8",
-    "@tensorflow/tfjs": "^4.22.0",
     "@types/react-router-dom": "^5.3.3",
     "hono": "4.11.7",
     "react": "19.2.7",

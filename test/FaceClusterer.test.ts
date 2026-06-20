@@ -48,12 +48,6 @@ vi.mock('ml-hclust', () => ({
   })
 }));
 
-vi.mock('ml-distance', () => ({
-  similarity: {
-    cosine: vi.fn().mockReturnValue(0.8) // High similarity
-  }
-}));
-
 // Helper function to create mock embeddings
 const createMockEmbedding = (values: number[]): EmbeddingResult => ({
   embeddings: [{

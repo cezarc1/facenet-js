@@ -12,11 +12,10 @@ export default defineConfig({
       formats: ['cjs'],
     },
     rollupOptions: {
-      external: ['@mediapipe/tasks-vision', '@tensorflow/tfjs', 'react'],
+      external: ['@mediapipe/tasks-vision', 'react'],
       output: {
         globals: {
           '@mediapipe/tasks-vision': 'MediaPipeTasksVision',
-          '@tensorflow/tfjs': 'tf',
           'react': 'React'
         }
       }

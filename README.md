@@ -418,5 +418,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - [MediaPipe](https://mediapipe.dev/)
-- [TensorFlow.js](https://www.tensorflow.org/js)
 - [FaceNet](https://arxiv.org/abs/1503.03832) (Schroff et al.)

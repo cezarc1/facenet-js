@@ -110,18 +110,6 @@ vi.mock('density-clustering', () => ({
   }),
 }));
 
-vi.mock('ml-distance', () => ({
-  similarity: {
-    cosine: vi.fn().mockImplementation((a, b) => {
-      // Mock cosine similarity - higher for similar vectors
-      const sumA = a.reduce((sum: number, val: number) => sum + val, 0);
-      const sumB = b.reduce((sum: number, val: number) => sum + val, 0);
-      const diff = Math.abs(sumA - sumB);
-      return Math.max(0, 1 - diff / 10); // Scale to 0-1 range
-    })
-  }
-}));
-
 describe('Face Clustering Integration Tests', () => {
   let faceDetector: FaceDetector;
   let faceClusterer: FaceClusterer;

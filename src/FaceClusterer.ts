@@ -1,5 +1,4 @@
 import { DBSCAN, KMEANS, OPTICS } from 'density-clustering';
-import { similarity } from 'ml-distance';
 import { agnes } from 'ml-hclust';
 import { Embedding, EmbeddingResult } from './types';
 
@@ -267,6 +266,13 @@ export class FaceClusterer {
     return Math.sqrt(sumSquaredDiffs);
   }
 
+  private static cosineSimilarity(a: number[], b: number[]): number {
+    if (a.length !== b.length) {
+      return Number.NaN;
+    }
+    return 1 - FaceClusterer.cosineDistance(a, b);
+  }
+
   private static clustersToLabels(clusters: number[][], totalPoints: number): number[] {
     const labels = new Int32Array(totalPoints).fill(-1);
     const assignmentCount = new Map<number, number>();
@@ -457,7 +463,7 @@ export class FaceClusterer {
       const vector = embeddingVectors[index]!;
       if (vector) {
         const vectorArray = Array.from(vector!);
-        const sim = similarity.cosine(vectorArray, centroidArray);
+        const sim = FaceClusterer.cosineSimilarity(vectorArray, centroidArray);
         if (!isNaN(sim) && isFinite(sim)) {
           totalSimilarity += sim;
         }
