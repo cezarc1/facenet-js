@@ -237,6 +237,42 @@ describe('useFaceClustering', () => {
     expect(firstResult).toBe(secondResult);
   });
 
+  it('should not recluster when omitted options resolve to the same defaults', () => {
+    const embeddings = [
+      createMockEmbedding([1, 0, 0, 1]),
+      createMockEmbedding([0, 1, 1, 0])
+    ];
+
+    const { rerender } = renderHook(() => useFaceClustering(embeddings));
+
+    expect(faceClustererMocks.cluster).toHaveBeenCalledTimes(1);
+
+    rerender();
+
+    expect(faceClustererMocks.cluster).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not recluster for inline options with identical resolved values', () => {
+    const embeddings = [
+      createMockEmbedding([1, 0, 0, 1]),
+      createMockEmbedding([0, 1, 1, 0])
+    ];
+
+    const { rerender } = renderHook(
+      ({ nonce }) => {
+        void nonce;
+        return useFaceClustering(embeddings, { threshold: 0.8, minSamples: 2 });
+      },
+      { initialProps: { nonce: 0 } }
+    );
+
+    expect(faceClustererMocks.cluster).toHaveBeenCalledTimes(1);
+
+    rerender({ nonce: 1 });
+
+    expect(faceClustererMocks.cluster).toHaveBeenCalledTimes(1);
+  });
+
   it('should handle edge case with malformed embeddings', () => {
     const malformedEmbeddings = [
       { embeddings: [] }, // No embeddings array

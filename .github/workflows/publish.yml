@@ -22,10 +22,10 @@ jobs:
     - name: Run tests
       run: npm test
     
-    - name: Build
-      run: npm run build
+    - name: Verify release package
+      run: npm run release:verify
     
     - name: Publish to npm
       run: npm publish
       env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} 
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

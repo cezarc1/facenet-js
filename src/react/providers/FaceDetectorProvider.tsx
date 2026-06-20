@@ -8,6 +8,10 @@ export interface FaceDetectorProviderProps {
   options: FaceDetectionOptions;
 }
 
+interface FaceDetectorProviderState extends FaceDetectorContextType {
+  optionsKey: string;
+}
+
 export const ImageFaceDetectorProvider = ({
   children,
   options,
@@ -48,53 +52,78 @@ export const FaceDetectorProvider = ({ children, options }: FaceDetectorProvider
     }),
     [detectionModelPath, device, embeddingModelPath, minDetectionConfidence, mode, wasmPath]
   );
-  const faceDetector = useMemo(
-    () => new FaceDetector(faceDetectorOptions),
+  const optionsKey = useMemo(
+    () => JSON.stringify(faceDetectorOptions),
     [faceDetectorOptions]
   );
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [contextState, setContextState] = useState<FaceDetectorProviderState>({
+    optionsKey: '',
+    faceDetector: null,
+    isLoading: true,
+    error: null,
+  });
 
   useEffect(() => {
     let isActive = true;
+    let isClosed = false;
+    const faceDetector = new FaceDetector(faceDetectorOptions);
 
-    const initializeDetector = async () => {
-      await Promise.resolve();
-      console.info('Initializing face detector...');
-      try {
-        setError(null);
-        setIsLoading(true);
-        await faceDetector.initialize();
-        if (isActive) {
-          setError(null);
-        }
-      } catch (err) {
-        console.error('❌ Face detector initialization failed:', err);
-        if (isActive) {
-          setError(err instanceof Error ? err : new Error(String(err)));
-        }
-      } finally {
-        if (isActive) {
-          setIsLoading(false);
-        }
+    const closeDetector = () => {
+      if (!isClosed) {
+        isClosed = true;
+        faceDetector.close();
       }
     };
 
-    void initializeDetector();
+    const initializePromise = faceDetector
+      .initialize()
+      .then(() => {
+        if (!isActive) {
+          closeDetector();
+          return;
+        }
+
+        setContextState({
+          optionsKey,
+          faceDetector,
+          isLoading: false,
+          error: null,
+        });
+      })
+      .catch((err) => {
+        closeDetector();
+
+        if (isActive) {
+          setContextState({
+            optionsKey,
+            faceDetector: null,
+            isLoading: false,
+            error: err instanceof Error ? err : new Error(String(err)),
+          });
+        }
+      });
 
     return () => {
       isActive = false;
+      void initializePromise.then(closeDetector, closeDetector);
     };
-  }, [faceDetector]);
+  }, [faceDetectorOptions, optionsKey]);
 
-  const contextValue: FaceDetectorContextType = useMemo(
-    () => ({
-      faceDetector,
-      isLoading,
-      error,
-    }),
-    [error, faceDetector, isLoading]
-  );
+  const contextValue: FaceDetectorContextType = useMemo(() => {
+    if (contextState.optionsKey !== optionsKey) {
+      return {
+        faceDetector: null,
+        isLoading: true,
+        error: null,
+      };
+    }
+
+    return {
+      faceDetector: contextState.faceDetector,
+      isLoading: contextState.isLoading,
+      error: contextState.error,
+    };
+  }, [contextState, optionsKey]);
 
   return (
     <FaceDetectorContext.Provider value={contextValue}>{children}</FaceDetectorContext.Provider>

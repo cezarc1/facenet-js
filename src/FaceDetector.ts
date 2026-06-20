@@ -48,6 +48,8 @@ export class FaceDetector {
   private options: FaceDetectionOptions;
   private _state: FaceDetectorState = 'not_initialized';
   private _error: Error | null = null;
+  private initializationPromise: Promise<void> | null = null;
+  private lifecycleId = 0;
 
   constructor(options: FaceDetectionOptions) {
     this.options = options;
@@ -66,12 +68,35 @@ export class FaceDetector {
       return;
     }
     if (this.state === 'initializing') {
-      return;
+      return this.initializationPromise ?? undefined;
     }
 
+    this._state = 'initializing';
+    this._error = null;
+    const lifecycleId = this.lifecycleId;
+    const initializationPromise = this.initializeTasks(lifecycleId);
+    this.initializationPromise = initializationPromise;
+    initializationPromise.then(
+      () => {
+        if (this.initializationPromise === initializationPromise) {
+          this.initializationPromise = null;
+        }
+      },
+      () => {
+        if (this.initializationPromise === initializationPromise) {
+          this.initializationPromise = null;
+        }
+      }
+    );
+
+    return initializationPromise;
+  }
+
+  private async initializeTasks(lifecycleId: number) {
+    let nextFaceDetector: FaceDetectorMediaPipe | null = null;
+    let nextFaceEmbedder: ImageEmbedder | null = null;
+
     try {
-      this._state = 'initializing';
-      this._error = null;
       const vision = await FilesetResolver.forVisionTasks(
         this.options.wasmPath || DEFAULT_WASM_PATH
       );
@@ -96,11 +121,11 @@ export class FaceDetector {
           }),
         ]);
 
-        this.faceDetector = faceDetector;
-        this.faceEmbedder = faceEmbedder;
+        nextFaceDetector = faceDetector;
+        nextFaceEmbedder = faceEmbedder;
       } else {
         // Create face detector but not face embedder if no embedding model path
-        this.faceDetector = await FaceDetectorMediaPipe.createFromOptions(vision, {
+        nextFaceDetector = await FaceDetectorMediaPipe.createFromOptions(vision, {
           baseOptions: {
             modelAssetPath: this.options.detectionModelPath || DEFAULT_DETECTION_MODEL,
             delegate: this.options.device,
@@ -110,12 +135,43 @@ export class FaceDetector {
         });
       }
 
+      if (lifecycleId !== this.lifecycleId) {
+        this.closeCreatedTasks(nextFaceDetector, nextFaceEmbedder);
+        return;
+      }
+
+      this.faceDetector = nextFaceDetector;
+      this.faceEmbedder = nextFaceEmbedder;
       this._state = 'initialized';
     } catch (error) {
-      this._state = 'error';
-      this._error = error instanceof Error ? error : new Error(String(error));
+      this.closeCreatedTasks(nextFaceDetector, nextFaceEmbedder);
+      if (lifecycleId === this.lifecycleId) {
+        this._state = 'error';
+        this._error = error instanceof Error ? error : new Error(String(error));
+      }
       throw error;
     }
+  }
+
+  /**
+   * Releases MediaPipe task resources and resets this wrapper to an uninitialized state.
+   */
+  close(): void {
+    this.lifecycleId++;
+    this.initializationPromise = null;
+    this.closeCreatedTasks(this.faceDetector, this.faceEmbedder);
+    this.faceDetector = null;
+    this.faceEmbedder = null;
+    this._state = 'not_initialized';
+    this._error = null;
+  }
+
+  private closeCreatedTasks(
+    faceDetector: FaceDetectorMediaPipe | null,
+    faceEmbedder: ImageEmbedder | null
+  ) {
+    faceDetector?.close();
+    faceEmbedder?.close();
   }
 
   /**

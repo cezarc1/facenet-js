@@ -358,6 +358,20 @@ describe('FaceClusterer', () => {
       expect(() => clusterer.cluster(nanEmbeddings)).toThrow('No valid embedding vectors found');
     });
 
+    it('should preserve original indices when filtering invalid embeddings', () => {
+      const mixedEmbeddings = [
+        createMockEmbedding([NaN, 0, 0, 1]),
+        createMockEmbedding([1, 0, 0, 1]),
+        createMockEmbedding([1, 0, 0, 0.9])
+      ];
+
+      const result = clusterer.cluster(mixedEmbeddings);
+
+      expect(result.totalEmbeddings).toBe(3);
+      expect(result.clusters[0].memberIndices).toEqual([1, 2]);
+      expect(result.outliers).toEqual([0]);
+    });
+
     it('should handle very large embedding arrays', () => {
       const largeEmbeddings = Array.from({ length: 50 }, () => 
         createMockEmbedding([Math.random(), Math.random(), Math.random(), Math.random()])

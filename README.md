@@ -29,6 +29,8 @@ Code for the demo is in the example folder [here](https://github.com/cezarc1/fac
 npm install facenet-js
 ```
 
+The core package installs its pinned MediaPipe Tasks Vision runtime. React is an optional peer used by the `facenet-js/react` entry point; apps that import React providers or hooks should provide React 19 or newer.
+
 or with yarn:
 
 ```bash
@@ -86,6 +88,10 @@ function App() {
 
 function FaceDetectionComponent() {
   const { faceDetector, isLoading, error } = useFaceDetector();
+
+  if (isLoading || !faceDetector) {
+    return null;
+  }
   
   // The face detector is automatically initialized by the provider
   // Use faceDetector.detectFromImage() or faceDetector.detectFromVideo()
@@ -183,7 +189,7 @@ const { faceDetector, isLoading, error } = useFaceDetector();
 
 Returns:
 
-- `faceDetector`: The FaceDetector instance
+- `faceDetector`: The initialized FaceDetector instance, or `null` while loading or after initialization fails
 - `isLoading`: Boolean indicating if models are loading
 - `error`: Error object if initialization failed
 
@@ -404,6 +410,9 @@ npm test
 
 # Lint code
 npm run lint
+
+# Build and verify the npm package contents
+npm run release:verify
 ```
 
 ## TODO / Roadmap

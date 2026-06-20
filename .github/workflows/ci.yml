@@ -32,11 +32,5 @@ jobs:
     - name: Run tests
       run: npm test
     
-    - name: Build library
-      run: npm run build
-    
-    - name: Check build output
-      run: |
-        test -f dist/index.js
-        test -f dist/index.cjs
-        test -f dist/index.d.ts 
+    - name: Verify release package
+      run: npm run release:verify

@@ -1,5 +1,5 @@
-import { Camera } from '@mediapipe/camera_utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Camera } from '../utils/Camera';
 
 export type ImageCaptureState = 'idle' | 'camera-preview' | 'captured';
 

@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { useMultiFaceEmbeddings } from '../../src/react/hooks/useMultiFaceEmbeddings';
 import type { FaceSource, Detection, EmbeddingResult } from '../../src/types';
 
@@ -55,6 +55,10 @@ describe('useMultiFaceEmbeddings', () => {
     mockFaceDetector.embed.mockReturnValue(
       createMockEmbedding([1, 0, 0, 1])
     );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('should return empty results for empty sources array', () => {
@@ -199,6 +203,61 @@ describe('useMultiFaceEmbeddings', () => {
     expect(result.current.progress.current).toBe(3);
     expect(result.current.progress.total).toBe(3);
     expect(result.current.progress.percentage).toBe(100);
+  });
+
+  it('should expose loading before synchronous source processing starts', async () => {
+    vi.useFakeTimers();
+    const sources: FaceSource[] = [
+      { image: createMockImage('img1.jpg'), id: 'img1' },
+      { image: createMockImage('img2.jpg'), id: 'img2' }
+    ];
+
+    const { result } = renderHook(() => useMultiFaceEmbeddings(sources));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.progress).toEqual({ current: 0, total: 2, percentage: 0 });
+    expect(mockFaceDetector.detectFromImage).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.progress.percentage).toBe(100);
+    expect(result.current.embeddings).toHaveLength(4);
+  });
+
+  it('should cancel stale processing when sources change before the next task', async () => {
+    vi.useFakeTimers();
+    const staleImage = createMockImage('stale.jpg');
+    const freshImage = createMockImage('fresh.jpg');
+    const staleSources: FaceSource[] = [{ image: staleImage, id: 'stale' }];
+    const freshSources: FaceSource[] = [{ image: freshImage, id: 'fresh' }];
+
+    const { result, rerender } = renderHook(
+      ({ sources }) => useMultiFaceEmbeddings(sources),
+      { initialProps: { sources: staleSources } }
+    );
+
+    rerender({ sources: freshSources });
+
+    await act(async () => {
+      await Promise.resolve();
+      await vi.runAllTimersAsync();
+      await Promise.resolve();
+    });
+
+    expect(result.current.progress.percentage).toBe(100);
+    expect(mockFaceDetector.detectFromImage).not.toHaveBeenCalledWith(staleImage);
+    expect(mockFaceDetector.detectFromImage).toHaveBeenCalledWith(freshImage);
+    expect(result.current.embeddingsWithSource.map(({ sourceId }) => sourceId)).toEqual([
+      'fresh',
+      'fresh'
+    ]);
   });
 
   it('should handle detector loading state', () => {

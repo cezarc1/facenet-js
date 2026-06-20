@@ -33,5 +33,11 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
     },
+  },
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: globals.node,
+    },
   }
 );

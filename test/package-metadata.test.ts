@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 type PackageJson = {
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
+  peerDependenciesMeta?: Record<string, { optional?: boolean }>;
   scripts?: Record<string, string>;
 };
 
@@ -16,11 +17,12 @@ describe('package metadata', () => {
   it('keeps React as a peer dependency instead of bundling a second runtime copy', () => {
     expect(packageJson.dependencies?.react).toBeUndefined();
     expect(packageJson.peerDependencies?.react).toBe('>=19.0.0');
+    expect(packageJson.peerDependenciesMeta?.react?.optional).toBe(true);
   });
 
-  it('pins MediaPipe Tasks Vision to the verified stable release', () => {
+  it('pins MediaPipe Tasks Vision as the direct runtime implementation dependency', () => {
     expect(packageJson.dependencies?.['@mediapipe/tasks-vision']).toBe('0.10.35');
-    expect(packageJson.peerDependencies?.['@mediapipe/tasks-vision']).toBe('0.10.35');
+    expect(packageJson.peerDependencies?.['@mediapipe/tasks-vision']).toBeUndefined();
   });
 
   it('does not require unused TensorFlow or distance packages at runtime', () => {
@@ -44,5 +46,11 @@ describe('package metadata', () => {
     for (const scriptName of lifecycleScripts) {
       expect(packageJson.scripts?.[scriptName]).toBeUndefined();
     }
+  });
+
+  it('defines an explicit release verification script instead of publish hooks', () => {
+    expect(packageJson.scripts?.['release:verify']).toBe(
+      'npm run build && node scripts/verify-pack.mjs'
+    );
   });
 });

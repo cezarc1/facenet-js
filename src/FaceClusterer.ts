@@ -66,6 +66,11 @@ export const DEFAULT_OPTIONS: Required<ClusteringOptions> = {
   distanceMetric: 'cosine',
 };
 
+interface IndexedEmbeddingVector {
+  vector: Float32Array;
+  originalIndex: number;
+}
+
 /**
  * A class for clustering face embeddings to group similar faces together.
  * This clustering happens on the CPU.
@@ -115,10 +120,11 @@ export class FaceClusterer {
     if (!embeddings || embeddings.length === 0) {
       throw new Error('No embeddings provided for clustering');
     }
-    const embeddingVectors = this.extractEmbeddingVectors(embeddings);
-    if (embeddingVectors.length === 0) {
+    const indexedEmbeddingVectors = this.extractEmbeddingVectors(embeddings);
+    if (indexedEmbeddingVectors.length === 0) {
       throw new Error('No valid embedding vectors found');
     }
+    const embeddingVectors = indexedEmbeddingVectors.map(({ vector }) => vector);
     let clusterLabels: number[];
     switch (this.options.algorithm) {
       case 'DBSCAN':
@@ -136,13 +142,18 @@ export class FaceClusterer {
       default:
         throw new Error(`Unsupported clustering algorithm: ${this.options.algorithm}`);
     }
-    return this.buildClusterResult(embeddingVectors, clusterLabels, embeddings);
+    return this.buildClusterResult(
+      indexedEmbeddingVectors,
+      clusterLabels,
+      embeddings
+    );
   }
 
-  private extractEmbeddingVectors(embeddings: EmbeddingResult[]): Float32Array[] {
-    const vectors: Float32Array[] = [];
-    for (const embeddingResult of embeddings) {
-      if (embeddingResult.embeddings && embeddingResult.embeddings.length > 0) {
+  private extractEmbeddingVectors(embeddings: EmbeddingResult[]): IndexedEmbeddingVector[] {
+    const vectors: IndexedEmbeddingVector[] = [];
+    for (let originalIndex = 0; originalIndex < embeddings.length; originalIndex++) {
+      const embeddingResult = embeddings[originalIndex];
+      if (embeddingResult?.embeddings && embeddingResult.embeddings.length > 0) {
         const embedding = embeddingResult.embeddings[0];
         const floatEmbedding = embedding?.floatEmbedding;
         if (
@@ -150,7 +161,10 @@ export class FaceClusterer {
           floatEmbedding.length > 0 &&
           floatEmbedding.every(Number.isFinite)
         ) {
-          vectors.push(new Float32Array(floatEmbedding));
+          vectors.push({
+            vector: new Float32Array(floatEmbedding),
+            originalIndex,
+          });
         }
       }
     }
@@ -307,15 +321,27 @@ export class FaceClusterer {
   }
 
   private buildClusterResult(
-    embeddingVectors: Float32Array[],
+    indexedEmbeddingVectors: IndexedEmbeddingVector[],
     clusterLabels: number[],
     originalEmbeddings: EmbeddingResult[]
   ): ClusterResult {
+    const embeddingVectors = indexedEmbeddingVectors.map(({ vector }) => vector);
+    const validOriginalIndices = new Set(
+      indexedEmbeddingVectors.map(({ originalIndex }) => originalIndex)
+    );
     const clusterMap = new Map<number, number[]>();
-    const outliers: number[] = [];
+    const outliers = originalEmbeddings
+      .map((_, originalIndex) => originalIndex)
+      .filter(originalIndex => !validOriginalIndices.has(originalIndex));
+
     clusterLabels.forEach((label, index) => {
+      const originalIndex = indexedEmbeddingVectors[index]?.originalIndex;
+      if (originalIndex === undefined) {
+        return;
+      }
+
       if (label === -1) {
-        outliers.push(index);
+        outliers.push(originalIndex);
       } else {
         if (!clusterMap.has(label)) {
           clusterMap.set(label, []);
@@ -334,9 +360,13 @@ export class FaceClusterer {
     let clusterIdCounter = 0;
     for (const memberIndices of mergedClusterMap.values()) {
       if (memberIndices && memberIndices.length > 0) {
+        const originalMemberIndices = memberIndices
+          .map(index => indexedEmbeddingVectors[index]?.originalIndex)
+          .filter((index): index is number => index !== undefined);
         const cluster = this.buildFaceCluster(
           clusterIdCounter.toString(),
           memberIndices,
+          originalMemberIndices,
           embeddingVectors
         );
         clusters.push(cluster);
@@ -345,7 +375,7 @@ export class FaceClusterer {
     }
     return {
       clusters,
-      outliers,
+      outliers: outliers.sort((a, b) => a - b),
       algorithm: this.options.algorithm,
       totalEmbeddings: originalEmbeddings.length,
       options: this.options,
@@ -398,20 +428,21 @@ export class FaceClusterer {
   private buildFaceCluster(
     id: string,
     memberIndices: number[],
+    originalMemberIndices: number[],
     embeddingVectors: Float32Array[]
   ): FaceCluster {
     const centroid = this.calculateCentroid(memberIndices, embeddingVectors);
     const confidence = this.calculateClusterConfidence(memberIndices, embeddingVectors, centroid);
     return {
       id,
-      memberIndices,
+      memberIndices: originalMemberIndices,
       centroid: {
         floatEmbedding: Array.from(centroid),
         headIndex: 0,
         headName: 'face_cluster',
       } as unknown as Embedding,
       confidence,
-      size: memberIndices.length,
+      size: originalMemberIndices.length,
     };
   }
 

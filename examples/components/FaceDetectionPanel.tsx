@@ -1,7 +1,7 @@
-import { Camera } from '@mediapipe/camera_utils'
 import { Detection, EmbeddingResult, FaceDetectionDevice, FaceDetectionMode } from 'facenet-js'
 import { useFaceDetector } from 'facenet-js/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Camera } from '../utils/Camera'
 import { FaceHighlight, FaceHighlightMetrics } from './FaceHighlight'
 import { useImageCapture } from '../hooks/useImageCapture'
 import { ImageCaptureControls } from './ImageCaptureControls'

@@ -2,6 +2,19 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { FaceDetector } from '../src/FaceDetector';
 import type { FaceDetectionOptions } from '../src/types';
 
+const mediaPipeMocks = vi.hoisted(() => ({
+  faceDetectorInstances: [] as Array<{
+    detect: ReturnType<typeof vi.fn>;
+    detectForVideo: ReturnType<typeof vi.fn>;
+    close: ReturnType<typeof vi.fn>;
+  }>,
+  imageEmbedderInstances: [] as Array<{
+    embed: ReturnType<typeof vi.fn>;
+    embedForVideo: ReturnType<typeof vi.fn>;
+    close: ReturnType<typeof vi.fn>;
+  }>,
+}));
+
 // Mock HTML elements for testing
 function createMockHTMLImageElement() {
   const img = Object.create(HTMLImageElement.prototype);
@@ -32,15 +45,25 @@ vi.mock('@mediapipe/tasks-vision', () => ({
     forVisionTasks: vi.fn().mockResolvedValue({}),
   },
   FaceDetector: {
-    createFromOptions: vi.fn().mockResolvedValue({
-      detect: vi.fn().mockReturnValue({ detections: [] }),
-      detectForVideo: vi.fn().mockReturnValue({ detections: [] }),
+    createFromOptions: vi.fn().mockImplementation(() => {
+      const instance = {
+        detect: vi.fn().mockReturnValue({ detections: [] }),
+        detectForVideo: vi.fn().mockReturnValue({ detections: [] }),
+        close: vi.fn(),
+      };
+      mediaPipeMocks.faceDetectorInstances.push(instance);
+      return Promise.resolve(instance);
     }),
   },
   ImageEmbedder: {
-    createFromOptions: vi.fn().mockResolvedValue({
-      embed: vi.fn().mockReturnValue({ embeddings: [new Float32Array(128)] }),
-      embedForVideo: vi.fn().mockReturnValue({ embeddings: [new Float32Array(128)] }),
+    createFromOptions: vi.fn().mockImplementation(() => {
+      const instance = {
+        embed: vi.fn().mockReturnValue({ embeddings: [new Float32Array(128)] }),
+        embedForVideo: vi.fn().mockReturnValue({ embeddings: [new Float32Array(128)] }),
+        close: vi.fn(),
+      };
+      mediaPipeMocks.imageEmbedderInstances.push(instance);
+      return Promise.resolve(instance);
     }),
     cosineSimilarity: vi.fn().mockReturnValue(0.5),
   },
@@ -55,6 +78,9 @@ describe('FaceDetector', () => {
   };
 
   beforeEach(() => {
+    vi.clearAllMocks();
+    mediaPipeMocks.faceDetectorInstances.length = 0;
+    mediaPipeMocks.imageEmbedderInstances.length = 0;
     detector = new FaceDetector(defaultOptions);
   });
 
@@ -88,6 +114,45 @@ describe('FaceDetector', () => {
       const firstState = detector.state;
       await detector.initialize();
       expect(detector.state).toBe(firstState);
+    });
+
+    it('should close MediaPipe task handles and reset state idempotently', async () => {
+      const detectorWithEmbedding = new FaceDetector({
+        ...defaultOptions,
+        embeddingModelPath: './facenet.tflite',
+      });
+
+      await detectorWithEmbedding.initialize();
+
+      const faceDetectorTask = mediaPipeMocks.faceDetectorInstances[0];
+      const imageEmbedderTask = mediaPipeMocks.imageEmbedderInstances[0];
+
+      detectorWithEmbedding.close();
+      detectorWithEmbedding.close();
+
+      expect(faceDetectorTask.close).toHaveBeenCalledTimes(1);
+      expect(imageEmbedderTask.close).toHaveBeenCalledTimes(1);
+      expect(detectorWithEmbedding.state).toBe('not_initialized');
+      expect(detectorWithEmbedding.error).toBeNull();
+      expect(() =>
+        detectorWithEmbedding.detectFromImage(createMockHTMLImageElement() as any)
+      ).toThrow('Face detector not initialized');
+    });
+
+    it('should close task handles created after cleanup during initialization', async () => {
+      const detectorWithEmbedding = new FaceDetector({
+        ...defaultOptions,
+        embeddingModelPath: './facenet.tflite',
+      });
+
+      const initializePromise = detectorWithEmbedding.initialize();
+
+      detectorWithEmbedding.close();
+      await initializePromise;
+
+      expect(mediaPipeMocks.faceDetectorInstances[0].close).toHaveBeenCalledTimes(1);
+      expect(mediaPipeMocks.imageEmbedderInstances[0].close).toHaveBeenCalledTimes(1);
+      expect(detectorWithEmbedding.state).toBe('not_initialized');
     });
   });
 

@@ -1,13 +1,15 @@
 import { ClusteringOptions, DEFAULT_OPTIONS } from 'facenet-js';
 import { FaceSource, ImageFaceDetectorProvider, useFaceClustering, useMultiFaceEmbeddings } from 'facenet-js/react';
-import { Suspense, useCallback, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ClusterDisplay } from './components/ClusterDisplay';
 import { ClusteringSettings } from './components/ClusteringSettings';
 import { GitHubStats } from './components/GitHubStats';
 import { PhotoUploadArea } from './components/PhotoUploadArea';
 
-function MediaPipeErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
+function MediaPipeErrorFallback({ error, resetErrorBoundary }: { error: unknown; resetErrorBoundary: () => void }) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+
   return (
     <div className="min-h-screen bg-red-50 flex items-center justify-center p-4">
       <div className="bg-white p-6 rounded-lg shadow-md max-w-md w-full">
@@ -18,7 +20,7 @@ function MediaPipeErrorFallback({ error, resetErrorBoundary }: { error: Error; r
         <details className="mb-4">
           <summary className="text-sm text-gray-500 cursor-pointer">Error Details</summary>
           <pre className="text-xs bg-gray-100 p-2 rounded mt-2 overflow-auto max-h-32">
-            {error.message}
+            {errorMessage}
           </pre>
         </details>
         <button
@@ -88,12 +90,37 @@ const FaceClusteringDemoInner = () => {
     embeddings.length > 0 ? embeddings : null,
     clusteringOptions
   );
-  if (embeddingsError && !errors.some(e => e.message === embeddingsError.message)) {
-    handleError(embeddingsError);
-  }
-  if (clusteringError && !errors.some(e => e.message === clusteringError.message)) {
-    handleError(clusteringError);
-  }
+
+  useEffect(() => {
+    if (embeddingsError) {
+      let isActive = true;
+      queueMicrotask(() => {
+        if (isActive) {
+          handleError(embeddingsError);
+        }
+      });
+
+      return () => {
+        isActive = false;
+      };
+    }
+  }, [embeddingsError, handleError]);
+
+  useEffect(() => {
+    if (clusteringError) {
+      let isActive = true;
+      queueMicrotask(() => {
+        if (isActive) {
+          handleError(clusteringError);
+        }
+      });
+
+      return () => {
+        isActive = false;
+      };
+    }
+  }, [clusteringError, handleError]);
+
   const isProcessing = embeddingsLoading || clusteringLoading;
   const hasPhotos = photos.length > 0;
   const hasResults = clusters && clusters.clusters.length > 0;

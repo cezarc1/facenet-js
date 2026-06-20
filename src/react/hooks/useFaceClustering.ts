@@ -38,10 +38,19 @@ export const useFaceClustering = (
   /** Error that occurred during clustering, if any */
   error: Error | null;
 } => {
+  const algorithm = options.algorithm ?? DEFAULT_OPTIONS.algorithm;
+  const threshold = options.threshold ?? DEFAULT_OPTIONS.threshold;
+  const minSamples = options.minSamples ?? DEFAULT_OPTIONS.minSamples;
+  const maxClusters = options.maxClusters ?? DEFAULT_OPTIONS.maxClusters;
+  const distanceMetric = options.distanceMetric ?? DEFAULT_OPTIONS.distanceMetric;
+
   const result = useMemo(() => {
     const resolvedOptions: Required<ClusteringOptions> = {
-      ...DEFAULT_OPTIONS,
-      ...options,
+      algorithm,
+      threshold,
+      minSamples,
+      maxClusters,
+      distanceMetric,
     };
 
     if (!embeddings || embeddings.length === 0) {
@@ -79,7 +88,7 @@ export const useFaceClustering = (
       const error = err instanceof Error ? err : new Error(String(err));
       return { clusters: null, isLoading: false, error };
     }
-  }, [embeddings, options]);
+  }, [algorithm, distanceMetric, embeddings, maxClusters, minSamples, threshold]);
 
   return result;
 };
