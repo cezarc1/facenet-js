@@ -5,6 +5,7 @@ import path from 'path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  base: '/facenet-js/',
   plugins: [
     react(),
     babel({
