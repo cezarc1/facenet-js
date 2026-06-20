@@ -18,7 +18,6 @@ Code for the demo is in the example folder [here](https://github.com/cezarc1/fac
 - Support for both images and video streams
 - Hardware acceleration with WebGL/WebGPU for blazing-fast performance
 - Privacy-first: All processing happens locally in the browser
-- Uses MediaPipe Tasks Vision `0.10.35` with a version-pinned WASM runtime path by default
 
 ## Installation
 
@@ -395,23 +394,23 @@ FaceNet.js is designed as a browser-first library with excellent cross-browser c
 
 ## Development
 
+To try the framework locally with the example app:
+
 ```bash
-# Install dependencies
-npm install
-
-# Build the library
+nvm install
+npm ci
+npm --prefix examples ci
 npm run build
+npm --prefix examples run dev -- --host 127.0.0.1
+```
 
-# Run in development mode
-npm run dev
+Open the Vite URL printed by the final command. If you already have Node 24 or newer active, you can skip `nvm install`. The example app serves `examples/public/facenet.tflite`, which is already linked to the repo's local `models/facenet.tflite`, so no model copy step is needed.
 
-# Run tests
+Maintainer checks:
+
+```bash
 npm test
-
-# Lint code
 npm run lint
-
-# Build and verify the npm package contents
 npm run release:verify
 ```
 
