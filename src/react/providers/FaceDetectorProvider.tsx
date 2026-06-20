@@ -15,7 +15,7 @@ export const ImageFaceDetectorProvider = ({
   children: ReactNode;
   options: Omit<FaceDetectorProviderProps['options'], 'mode'>;
 }) => {
-  return FaceDetectorProvider({ children, options: { ...options, mode: 'IMAGE' } });
+  return <FaceDetectorProvider options={{ ...options, mode: 'IMAGE' }}>{children}</FaceDetectorProvider>;
 };
 
 export const VideoFaceDetectorProvider = ({
@@ -25,39 +25,76 @@ export const VideoFaceDetectorProvider = ({
   children: ReactNode;
   options: Omit<FaceDetectorProviderProps['options'], 'mode'>;
 }) => {
-  return FaceDetectorProvider({ children, options: { ...options, mode: 'VIDEO' } });
+  return <FaceDetectorProvider options={{ ...options, mode: 'VIDEO' }}>{children}</FaceDetectorProvider>;
 };
 
 export const FaceDetectorProvider = ({ children, options }: FaceDetectorProviderProps) => {
-  const faceDetector = useMemo(() => new FaceDetector(options), []);
+  const {
+    detectionModelPath,
+    device,
+    embeddingModelPath,
+    minDetectionConfidence,
+    mode,
+    wasmPath,
+  } = options;
+  const faceDetectorOptions = useMemo(
+    () => ({
+      detectionModelPath,
+      device,
+      embeddingModelPath,
+      minDetectionConfidence,
+      mode,
+      wasmPath,
+    }),
+    [detectionModelPath, device, embeddingModelPath, minDetectionConfidence, mode, wasmPath]
+  );
+  const faceDetector = useMemo(
+    () => new FaceDetector(faceDetectorOptions),
+    [faceDetectorOptions]
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    setError(null);
+    let isActive = true;
 
     const initializeDetector = async () => {
-      console.log('Initializing face detector...');
+      await Promise.resolve();
+      console.info('Initializing face detector...');
       try {
+        setError(null);
         setIsLoading(true);
         await faceDetector.initialize();
-        setError(null);
+        if (isActive) {
+          setError(null);
+        }
       } catch (err) {
         console.error('❌ Face detector initialization failed:', err);
-        setError(err instanceof Error ? err : new Error(String(err)));
+        if (isActive) {
+          setError(err instanceof Error ? err : new Error(String(err)));
+        }
       } finally {
-        setIsLoading(false);
+        if (isActive) {
+          setIsLoading(false);
+        }
       }
     };
 
-    initializeDetector();
+    void initializeDetector();
+
+    return () => {
+      isActive = false;
+    };
   }, [faceDetector]);
 
-  const contextValue: FaceDetectorContextType = {
-    faceDetector,
-    isLoading,
-    error,
-  };
+  const contextValue: FaceDetectorContextType = useMemo(
+    () => ({
+      faceDetector,
+      isLoading,
+      error,
+    }),
+    [error, faceDetector, isLoading]
+  );
 
   return (
     <FaceDetectorContext.Provider value={contextValue}>{children}</FaceDetectorContext.Provider>

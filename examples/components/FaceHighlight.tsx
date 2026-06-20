@@ -1,40 +1,33 @@
 import React from 'react'
 import { Detection } from '@mediapipe/tasks-vision'
 
+export interface FaceHighlightMetrics {
+  containerWidth: number
+  containerHeight: number
+  mediaWidth: number
+  mediaHeight: number
+  isVideo: boolean
+}
+
 interface FaceHighlightProps {
   detection: Detection
-  containerRef: React.RefObject<HTMLVideoElement | HTMLImageElement | null>
+  metrics: FaceHighlightMetrics
   isMirrored?: boolean
 }
 
 export const FaceHighlight = ({
   detection,
-  containerRef,
+  metrics,
   isMirrored
 }: FaceHighlightProps) => {
-  if (!containerRef.current || !detection) {
-    return null
-  }
-
-  const container = containerRef.current;
-  const { offsetWidth: containerWidth, offsetHeight: containerHeight } = container;
-  // If container has no dimensions, don't render highlights
-  if (containerWidth === 0 || containerHeight === 0) {
-    return null
-  }
-
   const bbox = detection.boundingBox;
   if (!bbox) {
     return null;
   }
 
-  let mediaWidth: number, mediaHeight: number;
-  if (container instanceof HTMLVideoElement) {
-    mediaWidth = container.videoWidth || containerWidth;
-    mediaHeight = container.videoHeight || containerHeight;
-  } else {
-    mediaWidth = container.naturalWidth || containerWidth;
-    mediaHeight = container.naturalHeight || containerHeight;
+  const { containerWidth, containerHeight, mediaWidth, mediaHeight, isVideo } = metrics;
+  if (containerWidth === 0 || containerHeight === 0 || mediaWidth === 0 || mediaHeight === 0) {
+    return null;
   }
 
   // Scale bounding box from media coordinates to container coordinates
@@ -46,7 +39,6 @@ export const FaceHighlight = ({
   const scaledHeight = bbox.height * scaleY;
 
   // For mirrored video (webcam), flip horizontally
-  const isVideo = container instanceof HTMLVideoElement;
   const left = isVideo && isMirrored ? containerWidth - scaledLeft - scaledWidth : scaledLeft;
 
   return (

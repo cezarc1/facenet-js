@@ -22,6 +22,11 @@ export interface EmbeddingWithSource {
   sourceId?: string;
 }
 
+const EMPTY_PROGRESS = { current: 0, total: 0, percentage: 0 };
+
+const isEmptyProgress = (progress: typeof EMPTY_PROGRESS) =>
+  progress.current === 0 && progress.total === 0 && progress.percentage === 0;
+
 /**
  * React hook for generating embeddings from multiple face sources.
  * Automatically detects faces and generates embeddings for each detected face.
@@ -68,11 +73,13 @@ export const useMultiFaceEmbeddings = (
   const [processingError, setProcessingError] = useState<Error | null>(null);
   const [progress, setProgress] = useState({ current: 0, total: 0, percentage: 0 });
 
-  const processEmbeddings = useCallback(async () => {
+  const processEmbeddings = useCallback(() => {
     if (!faceDetector || detectorLoading || !sources.length) {
-      setEmbeddings([]);
-      setEmbeddingsWithSource([]);
-      setProgress({ current: 0, total: 0, percentage: 0 });
+      setEmbeddings(prev => (prev.length === 0 ? prev : []));
+      setEmbeddingsWithSource(prev => (prev.length === 0 ? prev : []));
+      setIsProcessing(false);
+      setProcessingError(prev => (prev === null ? prev : null));
+      setProgress(prev => (isEmptyProgress(prev) ? prev : EMPTY_PROGRESS));
       return;
     }
 
@@ -149,7 +156,7 @@ export const useMultiFaceEmbeddings = (
   }, [faceDetector, detectorLoading, sources]);
 
   useEffect(() => {
-    processEmbeddings();
+    queueMicrotask(processEmbeddings);
   }, [processEmbeddings]);
 
   return {

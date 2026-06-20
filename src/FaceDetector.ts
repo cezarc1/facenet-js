@@ -15,7 +15,8 @@ import {
 
 const DEFAULT_DETECTION_MODEL =
   'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
-const DEFAULT_WASM_PATH = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm';
+export const MEDIAPIPE_TASKS_VISION_VERSION = '0.10.35';
+export const DEFAULT_WASM_PATH = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_TASKS_VISION_VERSION}/wasm`;
 
 /**
  * A class for detecting and embedding faces.

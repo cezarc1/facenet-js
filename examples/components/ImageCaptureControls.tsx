@@ -11,6 +11,7 @@ export const ImageCaptureControls: React.FC<ImageCaptureControlsProps> = ({
   className = '' 
 }) => {
   const { imageSource, captureState, isProcessing, error, actions, refs, isMobile, facingMode } = imageCapture;
+  const { canvasRef, fileInputRef, videoRef } = refs;
   
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -57,7 +58,7 @@ export const ImageCaptureControls: React.FC<ImageCaptureControlsProps> = ({
           </button>
           
           <input
-            ref={refs.fileInputRef}
+            ref={fileInputRef}
             type="file"
             accept="image/*"
             onChange={handleFileSelect}
@@ -70,14 +71,14 @@ export const ImageCaptureControls: React.FC<ImageCaptureControlsProps> = ({
         <div className="space-y-3">
           <div className="relative bg-gray-50 rounded-lg overflow-hidden">
             <video
-              ref={refs.videoRef}
+              ref={videoRef}
               autoPlay
               playsInline
               muted
               className="w-full h-60 object-cover transform -scale-x-100"
             />
             <canvas 
-              ref={refs.canvasRef} 
+              ref={canvasRef} 
               className="hidden" 
             />
             {isMobile && (

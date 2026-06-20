@@ -18,6 +18,7 @@ Code for the demo is in the example folder [here](https://github.com/cezarc1/fac
 - Support for both images and video streams
 - Hardware acceleration with WebGL/WebGPU for blazing-fast performance
 - Privacy-first: All processing happens locally in the browser
+- Uses MediaPipe Tasks Vision `0.10.35` with a version-pinned WASM runtime path by default
 
 ## Installation
 
@@ -122,17 +123,17 @@ new FaceDetector(options: FaceDetectionOptions)
 
 Initializes and loads the face detection models into browser memory. Must be called before detection.
 
-##### `detectFromImage(imageElement: HTMLImageElement): Promise<Detection[]>`
+##### `detectFromImage(imageElement: HTMLImageElement): Detection[]`
 
-Detects faces in a static image.
+Detects faces in a static image. This is synchronous after initialization.
 
-##### `detectFromVideo(videoElement: HTMLVideoElement, timestamp: number): Promise<Detection[]>`
+##### `detectFromVideo(videoElement: HTMLVideoElement, timestamp: number): Detection[]`
 
-Detects faces in a video frame.
+Detects faces in a video frame. This is synchronous after initialization.
 
-##### `embed(request: EmbeddingRequest): Promise<ImageEmbedderResult | null>`
+##### `embed(request: EmbeddingRequest): ImageEmbedderResult | null`
 
-Generates face embeddings for recognition.
+Generates face embeddings for recognition. This is synchronous after initialization.
 
 **EmbeddingRequest:**
 
@@ -224,7 +225,7 @@ async function detectFaces() {
   await detector.initialize();
 
   const img = document.querySelector('#photo') as HTMLImageElement;
-  const faces = await detector.detectFromImage(img);
+  const faces = detector.detectFromImage(img);
 
   console.log(`Found ${faces.length} faces`);
   
@@ -255,8 +256,8 @@ async function startVideoDetection() {
   const video = document.querySelector('#webcam') as HTMLVideoElement;
   
   // Detection loop
-  async function detect() {
-    const faces = await detector.detectFromVideo(video, performance.now());
+  function detect() {
+    const faces = detector.detectFromVideo(video, performance.now());
     
     // Process detected faces
     faces.forEach(face => {
@@ -286,8 +287,8 @@ async function compareFaces(img1: HTMLImageElement, img2: HTMLImageElement) {
   await detector.initialize();
 
   // Detect faces in both images
-  const faces1 = await detector.detectFromImage(img1);
-  const faces2 = await detector.detectFromImage(img2);
+  const faces1 = detector.detectFromImage(img1);
+  const faces2 = detector.detectFromImage(img2);
 
   if (faces1.length === 0 || faces2.length === 0) {
     console.log('No faces detected');
@@ -295,39 +296,25 @@ async function compareFaces(img1: HTMLImageElement, img2: HTMLImageElement) {
   }
 
   // Get embeddings
-  const embedding1 = await detector.embed({
+  const embedding1 = detector.embed({
     source: img1,
     detection: faces1[0]
   });
 
-  const embedding2 = await detector.embed({
+  const embedding2 = detector.embed({
     source: img2,
     detection: faces2[0]
   });
 
   if (embedding1 && embedding2) {
     // Calculate cosine similarity
-    const similarity = cosineSimilarity(
+    const similarity = FaceDetector.cosineSimilarity(
       embedding1.embeddings[0], 
       embedding2.embeddings[0]
     );
     
     console.log(`Face similarity: ${similarity}`);
   }
-}
-
-function cosineSimilarity(a: Float32Array, b: Float32Array): number {
-  let dotProduct = 0;
-  let normA = 0;
-  let normB = 0;
-  
-  for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
-  }
-  
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 ```
 

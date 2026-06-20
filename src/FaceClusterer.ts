@@ -118,7 +118,7 @@ export class FaceClusterer {
     }
     const embeddingVectors = this.extractEmbeddingVectors(embeddings);
     if (embeddingVectors.length === 0) {
-      throw new Error('embeddings  to cluster must be >0');
+      throw new Error('No valid embedding vectors found');
     }
     let clusterLabels: number[];
     switch (this.options.algorithm) {
@@ -145,8 +145,13 @@ export class FaceClusterer {
     for (const embeddingResult of embeddings) {
       if (embeddingResult.embeddings && embeddingResult.embeddings.length > 0) {
         const embedding = embeddingResult.embeddings[0];
-        if (embedding && embedding.floatEmbedding) {
-          vectors.push(new Float32Array(embedding.floatEmbedding));
+        const floatEmbedding = embedding?.floatEmbedding;
+        if (
+          floatEmbedding &&
+          floatEmbedding.length > 0 &&
+          floatEmbedding.every(Number.isFinite)
+        ) {
+          vectors.push(new Float32Array(floatEmbedding));
         }
       }
     }
@@ -321,11 +326,11 @@ export class FaceClusterer {
 
     const clusters: FaceCluster[] = [];
     let clusterIdCounter = 0;
-    for (const [_, memberIndices] of mergedClusterMap) {
+    for (const memberIndices of mergedClusterMap.values()) {
       if (memberIndices && memberIndices.length > 0) {
         const cluster = this.buildFaceCluster(
           clusterIdCounter.toString(),
-          memberIndices!,
+          memberIndices,
           embeddingVectors
         );
         clusters.push(cluster);
@@ -374,7 +379,7 @@ export class FaceClusterer {
         if (distance < (1 - this.options.threshold)) {
           indicesB.forEach((idx: number) => mergedIndices.add(idx));
           processed.add(labelB);
-          console.log(`Merging duplicate clusters ${labelA} and ${labelB} (distance: ${distance.toFixed(3)})`);
+          console.info(`Merging duplicate clusters ${labelA} and ${labelB} (distance: ${distance.toFixed(3)})`);
         }
       }
 

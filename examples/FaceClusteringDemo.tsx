@@ -1,4 +1,4 @@
-import { ClusteringOptions, DEFAULT_OPTIONS } from '../src/FaceClusterer';
+import { ClusteringOptions, DEFAULT_OPTIONS } from 'facenet-js';
 import { FaceSource, ImageFaceDetectorProvider, useFaceClustering, useMultiFaceEmbeddings } from 'facenet-js/react';
 import { Suspense, useCallback, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';

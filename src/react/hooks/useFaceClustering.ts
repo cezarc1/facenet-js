@@ -1,6 +1,11 @@
 import { useMemo } from 'react';
-import { FaceClusterer, ClusteringOptions, ClusterResult } from '../../FaceClusterer';
-import { EmbeddingResult } from '../../types';
+import {
+  DEFAULT_OPTIONS,
+  FaceClusterer,
+  ClusteringOptions,
+  ClusterResult,
+} from '../../FaceClusterer';
+import { Embedding, EmbeddingResult } from '../../types';
 
 /**
  * React hook for clustering face embeddings.
@@ -24,7 +29,7 @@ import { EmbeddingResult } from '../../types';
  */
 export const useFaceClustering = (
   embeddings: EmbeddingResult[] | null,
-  options: Required<ClusteringOptions>
+  options: ClusteringOptions = {}
 ): {
   /** Clustering result containing clusters and outliers */
   clusters: ClusterResult | null;
@@ -34,40 +39,46 @@ export const useFaceClustering = (
   error: Error | null;
 } => {
   const result = useMemo(() => {
+    const resolvedOptions: Required<ClusteringOptions> = {
+      ...DEFAULT_OPTIONS,
+      ...options,
+    };
+
     if (!embeddings || embeddings.length === 0) {
       return { clusters: null, isLoading: false, error: null };
     }
 
     if (embeddings.length === 1) {
+      const emptyEmbedding: Embedding = {
+        floatEmbedding: [],
+        headIndex: 0,
+        headName: 'single_face',
+      };
       const singleCluster: ClusterResult = {
         clusters: [
           {
             id: '0',
             memberIndices: [0],
-            centroid:
-              embeddings[0]?.embeddings?.[0] ||
-              ({
-                floatEmbedding: [],
-                headIndex: 0,
-                headName: 'single_face',
-              } as unknown as import('../../types').Embedding),
+            centroid: embeddings[0]?.embeddings?.[0] ?? emptyEmbedding,
             confidence: 1.0,
             size: 1,
           },
         ],
         outliers: [],
-        algorithm: options.algorithm,
+        algorithm: resolvedOptions.algorithm,
         totalEmbeddings: 1,
-        options,
+        options: resolvedOptions,
       };
       return { clusters: singleCluster, isLoading: false, error: null };
     }
-    const clusterer = useMemo(() => new FaceClusterer(options), [options]);
-    const start = performance.now();
-    const clusterResult = clusterer.cluster(embeddings);
-    const end = performance.now();
-    console.info(`Clustering took ${end - start}ms`);
-    return { clusters: clusterResult, isLoading: false, error: null };
+    try {
+      const clusterer = new FaceClusterer(resolvedOptions);
+      const clusterResult = clusterer.cluster(embeddings);
+      return { clusters: clusterResult, isLoading: false, error: null };
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      return { clusters: null, isLoading: false, error };
+    }
   }, [embeddings, options]);
 
   return result;

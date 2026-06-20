@@ -1,5 +1,5 @@
 export { FaceDetector } from './FaceDetector';
-export { FaceClusterer } from './FaceClusterer';
+export { DEFAULT_OPTIONS, FaceClusterer } from './FaceClusterer';
 
 export type {
   Detection,

@@ -114,6 +114,13 @@ export const useImageCapture = (options: UseImageCaptureOptions = {}): UseImageC
     }
   }, [facingMode, handleError]);
   
+  const stopCamera = useCallback(() => {
+    if (cameraRef.current) {
+      cameraRef.current.stop().catch(console.error);
+      cameraRef.current = null;
+    }
+  }, []);
+
   const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) {
       handleError(new Error('Video or canvas element not initialized'));
@@ -162,14 +169,7 @@ export const useImageCapture = (options: UseImageCaptureOptions = {}): UseImageC
     } catch (err) {
       handleError(err instanceof Error ? err : new Error('Failed to capture photo'));
     }
-  }, [handleError, onImageCapture]);
-  
-  const stopCamera = useCallback(() => {
-    if (cameraRef.current) {
-      cameraRef.current.stop().catch(console.error);
-      cameraRef.current = null;
-    }
-  }, []);
+  }, [handleError, onImageCapture, stopCamera]);
   
   const clearImage = useCallback(() => {
     setImageSource(null);

@@ -1,27 +1,25 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useFaceClustering } from '../../src/react/hooks/useFaceClustering';
 import type { EmbeddingResult, ClusteringOptions } from '../../src/types';
 
-// Mock FaceClusterer
+const faceClustererMocks = vi.hoisted(() => ({
+  cluster: vi.fn(),
+}));
+
 vi.mock('../../src/FaceClusterer', () => ({
-  FaceClusterer: {
-    cluster: vi.fn().mockReturnValue({
-      clusters: [
-        {
-          id: '0',
-          memberIndices: [0, 1],
-          centroid: { floatEmbedding: [1, 0, 0, 1], headIndex: 0, headName: 'cluster' },
-          confidence: 0.85,
-          size: 2
-        }
-      ],
-      outliers: [2],
-      algorithm: 'DBSCAN',
-      totalEmbeddings: 3,
-      options: { algorithm: 'DBSCAN', threshold: 0.7, minSamples: 2 }
-    })
-  }
+  DEFAULT_OPTIONS: {
+    algorithm: 'DBSCAN',
+    threshold: 0.6,
+    minSamples: 2,
+    maxClusters: 100,
+    distanceMetric: 'cosine',
+  },
+  FaceClusterer: vi.fn().mockImplementation(function (options) {
+    return {
+    cluster: (embeddings: EmbeddingResult[]) => faceClustererMocks.cluster(embeddings, options),
+    };
+  }),
 }));
 
 // Helper function to create mock embeddings
@@ -39,6 +37,25 @@ describe('useFaceClustering', () => {
     threshold: 0.7,
     minSamples: 2
   };
+
+  beforeEach(() => {
+    faceClustererMocks.cluster.mockReset();
+    faceClustererMocks.cluster.mockImplementation((embeddings, options) => ({
+      clusters: [
+        {
+          id: '0',
+          memberIndices: [0, 1],
+          centroid: { floatEmbedding: [1, 0, 0, 1], headIndex: 0, headName: 'cluster' },
+          confidence: 0.85,
+          size: 2
+        }
+      ],
+      outliers: embeddings.length > 2 ? [2] : [],
+      algorithm: options.algorithm,
+      totalEmbeddings: embeddings.length,
+      options
+    }));
+  });
 
   it('should return null for empty embeddings', () => {
     const { result } = renderHook(() => 
@@ -97,13 +114,14 @@ describe('useFaceClustering', () => {
   });
 
   it('should handle clustering errors gracefully', () => {
-    // Mock FaceClusterer to throw an error
-    const { FaceClusterer } = require('../../src/FaceClusterer');
-    FaceClusterer.cluster.mockImplementationOnce(() => {
+    faceClustererMocks.cluster.mockImplementationOnce(() => {
       throw new Error('Clustering failed');
     });
 
-    const embeddings = [createMockEmbedding([1, 0, 0, 1])];
+    const embeddings = [
+      createMockEmbedding([1, 0, 0, 1]),
+      createMockEmbedding([0, 1, 1, 0]),
+    ];
 
     const { result } = renderHook(() => 
       useFaceClustering(embeddings, defaultOptions)
@@ -116,13 +134,14 @@ describe('useFaceClustering', () => {
   });
 
   it('should handle non-Error exceptions', () => {
-    // Mock FaceClusterer to throw a string
-    const { FaceClusterer } = require('../../src/FaceClusterer');
-    FaceClusterer.cluster.mockImplementationOnce(() => {
+    faceClustererMocks.cluster.mockImplementationOnce(() => {
       throw 'String error';
     });
 
-    const embeddings = [createMockEmbedding([1, 0, 0, 1])];
+    const embeddings = [
+      createMockEmbedding([1, 0, 0, 1]),
+      createMockEmbedding([0, 1, 1, 0]),
+    ];
 
     const { result } = renderHook(() => 
       useFaceClustering(embeddings, defaultOptions)
@@ -153,7 +172,7 @@ describe('useFaceClustering', () => {
     rerender({ embeddings: embeddings2 });
     
     // Should recalculate clustering
-    expect(result.current.clusters?.totalEmbeddings).toBe(3); // Mocked value
+    expect(result.current.clusters?.totalEmbeddings).toBe(2);
   });
 
   it('should recalculate when options change', () => {
@@ -230,6 +249,26 @@ describe('useFaceClustering', () => {
 
     // Should handle gracefully, either with error or empty result
     expect(result.current.isLoading).toBe(false);
+  });
+
+  it('should accept partial options and apply defaults', () => {
+    const embeddings = [
+      createMockEmbedding([1, 0, 0, 1]),
+      createMockEmbedding([0, 1, 1, 0])
+    ];
+
+    const { result } = renderHook(() =>
+      useFaceClustering(embeddings, { threshold: 0.8 })
+    );
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.clusters?.options).toEqual({
+      algorithm: 'DBSCAN',
+      threshold: 0.8,
+      minSamples: 2,
+      maxClusters: 100,
+      distanceMetric: 'cosine',
+    });
   });
 
   it('should respect all clustering options', () => {
