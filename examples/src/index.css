@@ -1,0 +1,297 @@
+@import "tailwindcss";
+
+:root {
+  --demo-canvas: #F6F8FB;
+  --demo-surface: #FFFFFF;
+  --demo-surface-muted: #F1F5F9;
+  --demo-border: #D8E0EA;
+  --demo-border-strong: #94A3B8;
+  --demo-disabled-bg: #E2E8F0;
+  --demo-disabled-text: #94A3B8;
+  --demo-text: #111827;
+  --demo-muted: #64748B;
+  --demo-primary: #0F766E;
+  --demo-primary-hover: #115E59;
+  --demo-primary-soft: #CCFBF1;
+  --demo-accent: #4F46E5;
+  --demo-accent-hover: #4338CA;
+  --demo-accent-soft: #E0E7FF;
+  --demo-success: #15803D;
+  --demo-success-hover: #166534;
+  --demo-success-soft: #DCFCE7;
+  --demo-success-overlay: rgb(21 128 61 / 0.16);
+  --demo-success-border: #BBF7D0;
+  --demo-warning: #92400E;
+  --demo-warning-soft: #FEF3C7;
+  --demo-warning-border: #FDE68A;
+  --demo-danger: #B91C1C;
+  --demo-danger-hover: #991B1B;
+  --demo-danger-soft: #FEE2E2;
+  --demo-danger-border: #FECACA;
+  --demo-info: #2563EB;
+  --demo-info-soft: #DBEAFE;
+  --demo-info-border: #BFDBFE;
+  --demo-shadow: 0 1px 2px rgb(15 23 42 / 0.06), 0 8px 24px rgb(15 23 42 / 0.06);
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+}
+
+html {
+  width: 100vw;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body {
+  background: var(--demo-canvas);
+  color: var(--demo-text);
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: 0;
+  overflow-x: hidden;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.demo-page {
+  min-height: 100vh;
+  background: var(--demo-canvas);
+  color: var(--demo-text);
+}
+
+.demo-heading {
+  color: var(--demo-text);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
+.demo-subtle {
+  color: var(--demo-muted);
+}
+
+.demo-card {
+  background: var(--demo-surface);
+  border: 1px solid var(--demo-border);
+  border-radius: 0.5rem;
+  box-shadow: var(--demo-shadow);
+}
+
+.demo-media-frame {
+  background: var(--demo-surface-muted);
+  border: 1px solid var(--demo-border);
+  border-radius: 0.5rem;
+}
+
+.demo-button {
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.demo-button:focus-visible,
+.demo-option:focus-visible,
+.demo-tab:focus-visible,
+.demo-input:focus-visible {
+  outline: 2px solid var(--demo-accent);
+  outline-offset: 2px;
+}
+
+.demo-button:disabled {
+  cursor: not-allowed;
+  background: var(--demo-disabled-bg);
+  color: var(--demo-disabled-text);
+  box-shadow: none;
+}
+
+.demo-button-primary {
+  background: var(--demo-primary);
+  color: white;
+  box-shadow: 0 1px 2px rgb(15 118 110 / 0.24);
+}
+
+.demo-button-primary:hover:not(:disabled) {
+  background: var(--demo-primary-hover);
+}
+
+.demo-button-accent {
+  background: var(--demo-accent);
+  color: white;
+  box-shadow: 0 1px 2px rgb(79 70 229 / 0.24);
+}
+
+.demo-button-accent:hover:not(:disabled) {
+  background: var(--demo-accent-hover);
+}
+
+.demo-button-secondary {
+  background: var(--demo-surface);
+  color: var(--demo-text);
+  border: 1px solid var(--demo-border);
+}
+
+.demo-button-secondary:hover:not(:disabled) {
+  background: var(--demo-surface-muted);
+}
+
+.demo-button-danger {
+  background: var(--demo-danger);
+  color: white;
+}
+
+.demo-button-danger:hover:not(:disabled) {
+  background: var(--demo-danger-hover);
+}
+
+.demo-button-success {
+  background: var(--demo-success);
+  color: white;
+}
+
+.demo-button-success:hover:not(:disabled) {
+  background: var(--demo-success-hover);
+}
+
+.demo-callout {
+  border-radius: 0.5rem;
+  border: 1px solid var(--demo-border);
+  padding: 1rem;
+}
+
+.demo-callout-info {
+  background: var(--demo-info-soft);
+  border-color: var(--demo-info-border);
+  color: var(--demo-info);
+}
+
+.demo-callout-success {
+  background: var(--demo-success-soft);
+  border-color: var(--demo-success-border);
+  color: var(--demo-success);
+}
+
+.demo-callout-warning {
+  background: var(--demo-warning-soft);
+  border-color: var(--demo-warning-border);
+  color: var(--demo-warning);
+}
+
+.demo-callout-danger {
+  background: var(--demo-danger-soft);
+  border-color: var(--demo-danger-border);
+  color: var(--demo-danger);
+}
+
+.demo-stat {
+  border-radius: 0.5rem;
+  border: 1px solid var(--demo-border);
+  background: var(--demo-surface-muted);
+  padding: 0.75rem;
+}
+
+.demo-stat-info {
+  background: var(--demo-info-soft);
+  border-color: var(--demo-info-border);
+  color: var(--demo-info);
+}
+
+.demo-stat-success {
+  background: var(--demo-success-soft);
+  border-color: var(--demo-success-border);
+  color: var(--demo-success);
+}
+
+.demo-stat-accent {
+  background: var(--demo-accent-soft);
+  border-color: var(--demo-accent);
+  color: var(--demo-accent);
+}
+
+.demo-stat-warning {
+  background: var(--demo-warning-soft);
+  border-color: var(--demo-warning-border);
+  color: var(--demo-warning);
+}
+
+.demo-numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+.demo-input {
+  border: 1px solid var(--demo-border);
+  border-radius: 0.375rem;
+  background: var(--demo-surface);
+  color: var(--demo-text);
+}
+
+.demo-option {
+  border: 1px solid var(--demo-border);
+  border-radius: 0.5rem;
+  background: var(--demo-surface);
+  color: var(--demo-text);
+}
+
+.demo-option:hover:not(:disabled) {
+  border-color: var(--demo-accent);
+  background: var(--demo-accent-soft);
+}
+
+.demo-option-selected {
+  border-color: var(--demo-accent);
+  background: var(--demo-accent-soft);
+  color: var(--demo-accent);
+}
+
+.demo-segmented {
+  background: var(--demo-surface-muted);
+  border: 1px solid var(--demo-border);
+  border-radius: 0.625rem;
+  box-shadow: inset 0 1px 2px rgb(15 23 42 / 0.05);
+}
+
+.demo-tab {
+  border-radius: 0.5rem;
+  color: var(--demo-muted);
+  font-weight: 600;
+}
+
+.demo-tab-primary-active {
+  background: var(--demo-primary);
+  color: white;
+  box-shadow: 0 1px 2px rgb(15 118 110 / 0.24);
+}
+
+.demo-tab-accent-active {
+  background: var(--demo-accent);
+  color: white;
+  box-shadow: 0 1px 2px rgb(79 70 229 / 0.24);
+}
+
+.demo-tab:hover:not(.demo-tab-primary-active):not(.demo-tab-accent-active) {
+  background: white;
+  color: var(--demo-text);
+}
+
+.demo-progress {
+  background: var(--demo-disabled-bg);
+  border-radius: 999px;
+  height: 0.5rem;
+}
+
+.demo-progress-fill {
+  background: var(--demo-accent);
+  border-radius: 999px;
+  height: 0.5rem;
+}

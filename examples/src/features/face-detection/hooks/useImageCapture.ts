@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Camera } from '../utils/Camera';
+import type { Camera } from '../../../shared/camera/Camera';
+import { startCameraSession, stopCameraSession } from '../../../shared/camera/cameraSession';
+import { useIsMobile } from '../../../shared/hooks/useIsMobile';
 
 export type ImageCaptureState = 'idle' | 'camera-preview' | 'captured';
 
@@ -44,10 +46,7 @@ export const useImageCapture = (options: UseImageCaptureOptions = {}): UseImageC
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<Camera | null>(null);
   
-  // Detect if device is mobile
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    typeof navigator !== 'undefined' ? navigator.userAgent : ''
-  );
+  const isMobile = useIsMobile();
   
   const handleError = useCallback((err: Error) => {
     setError(err);
@@ -92,21 +91,13 @@ export const useImageCapture = (options: UseImageCaptureOptions = {}): UseImageC
       }
       
       // Stop any existing camera
-      if (cameraRef.current) {
-        cameraRef.current.stop();
-      }
-      
-      // Initialize new camera
-      cameraRef.current = new Camera(videoRef.current, {
+      stopCameraSession(cameraRef.current);
+      cameraRef.current = await startCameraSession(videoRef.current, {
         onFrame: () => {
           // Camera is running, no need to process frames here
         },
         facingMode,
-        width: 640,
-        height: 480
       });
-      
-      await cameraRef.current.start();
       setIsProcessing(false);
     } catch (err) {
       handleError(err instanceof Error ? err : new Error('Failed to start camera'));
@@ -116,7 +107,7 @@ export const useImageCapture = (options: UseImageCaptureOptions = {}): UseImageC
   
   const stopCamera = useCallback(() => {
     if (cameraRef.current) {
-      cameraRef.current.stop();
+      stopCameraSession(cameraRef.current);
       cameraRef.current = null;
     }
   }, []);
@@ -187,16 +178,13 @@ export const useImageCapture = (options: UseImageCaptureOptions = {}): UseImageC
     // If camera is active, restart with new facing mode
     if (captureState === 'camera-preview' && videoRef.current && cameraRef.current) {
       try {
-        cameraRef.current.stop();
-        cameraRef.current = new Camera(videoRef.current, {
+        stopCameraSession(cameraRef.current);
+        cameraRef.current = await startCameraSession(videoRef.current, {
           onFrame: () => {
             // Camera is running, no need to process frames here
           },
           facingMode: newMode,
-          width: 640,
-          height: 480
         });
-        await cameraRef.current.start();
       } catch (err) {
         handleError(err instanceof Error ? err : new Error('Failed to switch camera'));
       }

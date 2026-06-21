@@ -23,7 +23,7 @@ export const ImageCaptureControls: FC<ImageCaptureControlsProps> = ({
   return (
     <div className={className}>
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+        <div className="demo-callout demo-callout-danger mb-4 text-sm">
           <span className="font-medium">Error:</span> {error.message}
         </div>
       )}
@@ -33,7 +33,7 @@ export const ImageCaptureControls: FC<ImageCaptureControlsProps> = ({
           <button
             onClick={() => refs.fileInputRef.current?.click()}
             disabled={isProcessing}
-            className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-teal-600 text-white hover:bg-teal-700 shadow-sm disabled:bg-gray-300 disabled:text-gray-500"
+            className="demo-button demo-button-primary w-full py-3 px-4"
           >
             <span className="flex items-center justify-center gap-2">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,7 +48,7 @@ export const ImageCaptureControls: FC<ImageCaptureControlsProps> = ({
               void actions.startCamera();
             }}
             disabled={isProcessing}
-            className="w-full py-3 px-4 rounded-lg font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700 shadow-sm disabled:bg-gray-300 disabled:text-gray-500"
+            className="demo-button demo-button-secondary w-full py-3 px-4"
           >
             <span className="flex items-center justify-center gap-2">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,7 +71,7 @@ export const ImageCaptureControls: FC<ImageCaptureControlsProps> = ({
       
       {captureState === 'camera-preview' && (
         <div className="space-y-3">
-          <div className="relative bg-gray-50 rounded-lg overflow-hidden">
+          <div className="demo-media-frame relative overflow-hidden">
             <video
               ref={videoRef}
               autoPlay
@@ -88,10 +88,10 @@ export const ImageCaptureControls: FC<ImageCaptureControlsProps> = ({
                 onClick={() => {
                   void actions.switchCamera();
                 }}
-                className="absolute top-2 right-2 p-2 bg-white bg-opacity-80 rounded-full shadow-md hover:bg-opacity-100 transition-all"
+                className="demo-button demo-button-secondary absolute top-2 right-2 p-2 rounded-full"
                 title={`Switch to ${facingMode === 'user' ? 'back' : 'front'} camera`}
               >
-                <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-[var(--demo-text)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
@@ -102,7 +102,7 @@ export const ImageCaptureControls: FC<ImageCaptureControlsProps> = ({
             <button
               onClick={actions.capturePhoto}
               disabled={isProcessing}
-              className="flex-1 py-3 px-4 rounded-lg font-medium transition-colors bg-green-600 text-white hover:bg-green-700 shadow-sm disabled:bg-gray-300 disabled:text-gray-500"
+              className="demo-button demo-button-success flex-1 py-3 px-4"
             >
               <span className="flex items-center justify-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -115,7 +115,7 @@ export const ImageCaptureControls: FC<ImageCaptureControlsProps> = ({
             
             <button
               onClick={actions.stopCamera}
-              className="py-3 px-4 rounded-lg font-medium transition-colors bg-gray-600 text-white hover:bg-gray-700 shadow-sm"
+              className="demo-button demo-button-secondary py-3 px-4"
             >
               Cancel
             </button>
@@ -125,7 +125,7 @@ export const ImageCaptureControls: FC<ImageCaptureControlsProps> = ({
       
       {captureState === 'captured' && imageSource && (
         <div className="space-y-3">
-          <div className="relative bg-gray-50 rounded-lg overflow-hidden">
+          <div className="demo-media-frame relative overflow-hidden">
             <img
               src={imageSource}
               alt="Captured"
@@ -135,7 +135,7 @@ export const ImageCaptureControls: FC<ImageCaptureControlsProps> = ({
           
           <button
             onClick={actions.clearImage}
-            className="w-full py-2 px-4 rounded-lg font-medium transition-colors bg-gray-600 text-white hover:bg-gray-700 shadow-sm text-sm"
+            className="demo-button demo-button-secondary w-full py-2 px-4 text-sm"
           >
             Change Photo
           </button>

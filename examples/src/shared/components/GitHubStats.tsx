@@ -65,7 +65,7 @@ export function GitHubStats({ owner, repo, className = '' }: GitHubStatsProps) {
         href={`https://github.com/${owner}/${repo}`}
         target="_blank"
         rel="noopener noreferrer"
-        className={`flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors ${className}`}
+	        className={`flex items-center gap-2 px-3 py-1.5 bg-[var(--demo-text)] text-white rounded-md hover:bg-slate-800 transition-colors ${className}`}
         aria-label="View on GitHub"
       >
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -82,7 +82,7 @@ export function GitHubStats({ owner, repo, className = '' }: GitHubStatsProps) {
         href={`https://github.com/${owner}/${repo}`}
         target="_blank"
         rel="noopener noreferrer"
-        className={`flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors ${className}`}
+	        className={`flex items-center gap-2 px-3 py-1.5 bg-[var(--demo-text)] text-white rounded-md hover:bg-slate-800 transition-colors ${className}`}
         aria-label="View on GitHub"
       >
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -98,7 +98,7 @@ export function GitHubStats({ owner, repo, className = '' }: GitHubStatsProps) {
       href={`https://github.com/${owner}/${repo}`}
       target="_blank"
       rel="noopener noreferrer"
-      className={`flex items-center gap-3 px-3 py-1.5 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors ${className}`}
+	      className={`flex items-center gap-3 px-3 py-1.5 bg-[var(--demo-text)] text-white rounded-md hover:bg-slate-800 transition-colors ${className}`}
       aria-label={`View ${owner}/${repo} on GitHub`}
     >
       <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -110,7 +110,7 @@ export function GitHubStats({ owner, repo, className = '' }: GitHubStatsProps) {
         <span className="text-sm font-medium">{repo}</span>
       </div>
 
-      <div className="flex items-center gap-3 text-xs border-l border-gray-700 pl-3">
+	      <div className="flex items-center gap-3 text-xs border-l border-white/25 pl-3 demo-numeric">
         <div className="flex items-center gap-1">
           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
             <path d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.72-4.194L.818 6.374a.75.75 0 01.416-1.28l4.21-.611L7.327.668A.75.75 0 018 .25z" />
