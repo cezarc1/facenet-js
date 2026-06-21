@@ -8,6 +8,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 const reactHooksConfig = reactHooks.configs.flat['recommended-latest'];
+const tsconfigProjects = ['./tsconfig.app.json', './tsconfig.node.json'];
 
 export default tseslint.config(
   {
@@ -29,7 +30,7 @@ export default tseslint.config(
         ...globals.node,
       },
       parserOptions: {
-        project: './tsconfig.json',
+        project: tsconfigProjects,
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -39,7 +40,8 @@ export default tseslint.config(
     settings: {
       'import-x/resolver-next': [
         createTypeScriptImportResolver({
-          project: './tsconfig.json',
+          project: tsconfigProjects,
+          noWarnOnMultipleProjects: true,
         }),
       ],
       browserslistOpts: {

@@ -44,7 +44,7 @@ export const FaceHighlight = ({
   return (
     <Fragment key={0}>
       <div
-        className="absolute border-2 border-green-400 bg-opacity-25 z-[1]"
+        className="absolute border-2 border-[var(--demo-success)] bg-[var(--demo-success-overlay)] z-[1]"
         style={{
           left: `${left}px`,
           top: `${scaledTop}px`,
@@ -53,7 +53,7 @@ export const FaceHighlight = ({
         }}
       />
       <p
-        className="absolute bg-green-600 text-white text-xs px-2 py-1 z-20 rounded"
+        className="absolute bg-[var(--demo-success)] text-white text-xs px-2 py-1 z-20 rounded demo-numeric"
         style={{
           left: `${left}px`,
           top: `${scaledTop - 28}px`,
@@ -65,7 +65,7 @@ export const FaceHighlight = ({
       {detection.keypoints?.map((keypoint, kpIndex) => (
         <span
           key={`keypoint-${kpIndex}`}
-          className="absolute w-2 h-2 bg-blue-500 rounded-full z-30 transform -translate-x-1 -translate-y-1"
+          className="absolute w-2 h-2 bg-[var(--demo-info)] rounded-full z-30 transform -translate-x-1 -translate-y-1"
           style={{
             left: `${isVideo ? containerWidth - (keypoint.x * scaleX) : keypoint.x * scaleX}px`,
             top: `${keypoint.y * scaleY}px`,

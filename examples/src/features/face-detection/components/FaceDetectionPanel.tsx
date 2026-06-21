@@ -1,7 +1,8 @@
 import { Detection, EmbeddingResult, FaceDetectionDevice, FaceDetectionMode } from 'facenet-js'
 import { useFaceDetector } from 'facenet-js/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Camera } from '../utils/Camera'
+import type { Camera } from '../../../shared/camera/Camera'
+import { startCameraSession, stopCameraSession } from '../../../shared/camera/cameraSession'
 import { FaceHighlight, FaceHighlightMetrics } from './FaceHighlight'
 import { useImageCapture } from '../hooks/useImageCapture'
 import { ImageCaptureControls } from './ImageCaptureControls'
@@ -184,10 +185,8 @@ export const FaceDetectionPanel = ({
       return;
     }
     try {
-      if (cameraRef.current) {
-        cameraRef.current.stop();
-      }
-      cameraRef.current = new Camera(videoRef.current, {
+      stopCameraSession(cameraRef.current);
+      cameraRef.current = await startCameraSession(videoRef.current, {
         onFrame: async () => {
           if (videoRef.current && !isProcessingRef.current) {
             const timestamp = performance.now();
@@ -195,10 +194,7 @@ export const FaceDetectionPanel = ({
           }
         },
         facingMode: 'user',
-        width: 640,
-        height: 480
       });
-      await cameraRef.current.start();
       setIsWebcamActive(true);
       setProcessingError(null);
     } catch (error) {
@@ -211,7 +207,7 @@ export const FaceDetectionPanel = ({
   const stopWebcam = useCallback(() => {
     if (cameraRef.current) {
       try {
-        cameraRef.current.stop();
+        stopCameraSession(cameraRef.current);
         cameraRef.current = null;
         setIsWebcamActive(false);
         setDetection(null);
@@ -226,7 +222,7 @@ export const FaceDetectionPanel = ({
   useEffect(() => {
     return () => {
       if (cameraRef.current) {
-        cameraRef.current.stop();
+        stopCameraSession(cameraRef.current);
         cameraRef.current = null;
       }
     }
@@ -234,13 +230,13 @@ export const FaceDetectionPanel = ({
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border shadow-sm p-4">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">{title}</h3>
-        <div className="flex items-center justify-center h-60 bg-gray-50 rounded-lg">
+      <div className="demo-card p-4">
+        <h3 className="text-lg font-semibold text-[var(--demo-text)] mb-4">{title}</h3>
+        <div className="demo-media-frame flex items-center justify-center h-60">
           <div className="text-center">
-            <div className="animate-spin w-6 h-6 border-2 border-teal-700 border-t-transparent rounded-full mx-auto mb-2"></div>
-            <p className="text-sm text-gray-600">Loading {mode.toLowerCase()} models...</p>
-            <p className="text-xs text-gray-500 mt-1">Using {device} acceleration</p>
+            <div className="animate-spin w-6 h-6 border-2 border-[var(--demo-primary)] border-t-transparent rounded-full mx-auto mb-2"></div>
+            <p className="text-sm demo-subtle">Loading {mode.toLowerCase()} models...</p>
+            <p className="text-xs demo-subtle mt-1">Using {device} acceleration</p>
           </div>
         </div>
       </div>
@@ -251,11 +247,11 @@ export const FaceDetectionPanel = ({
   const isDisabled = disabled || isLoading || !!error
 
   return (
-    <div className="bg-white rounded-lg border shadow-sm p-4">
-      <h3 className="text-lg font-semibold text-gray-700 mb-4">{title}</h3>
+    <div className="demo-card p-4">
+      <h3 className="text-lg font-semibold text-[var(--demo-text)] mb-4">{title}</h3>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+        <div className="demo-callout demo-callout-danger mb-4 text-sm">
           <span className="font-medium">Error:</span> {error.message}
         </div>
       )}
@@ -271,7 +267,7 @@ export const FaceDetectionPanel = ({
           
           {imageCapture.imageSource && (
             <>
-              <div className="relative bg-gray-50 rounded-lg overflow-hidden h-60 mb-3">
+              <div className="demo-media-frame relative overflow-hidden h-60 mb-3">
                 <img
                   ref={imageRef}
                   src={imageCapture.imageSource}
@@ -291,7 +287,7 @@ export const FaceDetectionPanel = ({
                   setEmbedding(null);
                   setImageHighlightMetrics(null);
                 }}
-                className="w-full py-2 px-4 rounded-lg font-medium transition-colors bg-gray-600 text-white hover:bg-gray-700 shadow-sm text-sm"
+                className="demo-button demo-button-secondary w-full py-2 px-4 text-sm"
               >
                 Change Photo
               </button>
@@ -309,16 +305,16 @@ export const FaceDetectionPanel = ({
               void handleWebcamEnable();
             }}
             disabled={isDisabled}
-            className={`w-full py-3 px-4 rounded-lg font-medium transition-colors mb-4 ${isDisabled
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            className={`demo-button w-full py-3 px-4 mb-4 ${isDisabled
+              ? ''
               : isWebcamActive
-                ? 'bg-red-600 text-white hover:bg-red-700 shadow-sm'
-                : 'bg-teal-600 text-white hover:bg-teal-700 shadow-sm'
+                ? 'demo-button-danger'
+                : 'demo-button-primary'
               }`}
           >
             {isWebcamActive ? 'Stop Webcam' : buttonText}
           </button>
-          <div className="relative bg-gray-50 rounded-lg h-60">
+          <div className="demo-media-frame relative h-60">
             <video
               ref={videoRef}
               autoPlay
@@ -336,9 +332,9 @@ export const FaceDetectionPanel = ({
       )}
 
       {detection && (
-        <div className="mt-4 p-2 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-center gap-2 text-sm text-green-700">
-            <span className="text-green-500">✓</span>
+        <div className="demo-callout demo-callout-success mt-4 p-2">
+          <div className="flex items-center gap-2 text-sm">
+            <span>✓</span>
             <span className="font-medium">
               Face detected (Confidence: {Math.round(detection.categories[0].score * 100)}%)
             </span>

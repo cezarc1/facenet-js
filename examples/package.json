@@ -35,7 +35,7 @@
   "scripts": {
     "build": "tsc -b && vite build",
     "cf-typegen": "wrangler types",
-    "check": "tsc && vite build && wrangler deploy --dry-run",
+    "check": "tsc -b && vite build && wrangler deploy --dry-run --name facenet-js-example --compatibility-date 2026-06-21 --assets=./dist",
     "deploy": "wrangler deploy",
     "dev": "vite",
     "lint": "eslint .",
